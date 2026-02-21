@@ -1,0 +1,941 @@
+// ============================================================
+// Paul Carmody's Speedster - 3D Printed Enclosure v2
+// "Curved-Back Wedge" Design
+// 
+// Parametric OpenSCAD Design
+// Printer: Bambu Lab H2D
+// Material: PETG (single material, 10mm walls)
+// Seal: Tongue-and-groove joint with foam tape or TPU strip
+// 
+// Drivers:
+//   Woofer:  Tang Band W4-1720 (surface mounted)
+//   Tweeter: Fountek NeoCD1.0 (flush mounted, round faceplate)
+//
+// Target specs:
+//   Internal volume: 5.5 liters
+//   Port: 1.375" dia x 4.5" long, tuned to ~55 Hz
+//   
+// Shape: Wide flat baffle tapering to narrow rounded back
+// Assembly: Front/back split with tongue-and-groove seal + M4 bolts
+//           8 pillar pairs with concentric interlocks at split plane
+// ============================================================
+
+// ========================
+// PARAMETRIC VARIABLES
+// ========================
+
+// --- Target ---
+target_volume_liters = 5.5;
+
+// --- Wall thickness ---
+wall = 10;                // PETG wall thickness (mm)
+
+// --- Baffle (front face) dimensions ---
+baffle_width = 165;       // External width at front (mm) - close to original 152mm
+baffle_height = 300;      // External height (mm) - taller for volume
+baffle_corner_r = 15;     // Corner rounding on front face
+
+// --- Front edge roundover ---
+// Smooths baffle-to-side transition to reduce diffraction
+// Larger = better diffraction behavior, blends into taper
+baffle_roundover = 28;    // Front edge roundover radius (mm)
+
+// --- Back dimensions ---
+// NOTE: back_width must be >= terminal_outer + 15mm for binding plate to fit
+back_width = 118;         // External width at rear (mm) - sized for binding plate
+back_height = 240;        // External height at rear (mm)
+back_corner_r = 42;       // Generous rounding on back
+
+// --- Depth ---
+enclosure_depth = 185;    // Total external depth (mm) - TUNED for 5.5L
+
+// --- Taper curve ---
+// Controls the shape of the wedge taper
+// Higher = more volume up front, sharper taper at back
+// 1.0 = linear taper, 2.0 = quadratic, 1.5 = gentle curve
+taper_power = 2.0;        // TUNED - quadratic taper for 5.5L target
+
+// --- Port parameters ---
+port_diameter = 34.925;   // 1.375 inches in mm
+port_length = 114.3;      // 4.5 inches in mm
+port_wall_thick = 2.5;    // Port tube wall thickness
+port_x_offset = 0;        // Centered horizontally
+port_y_offset = 45;       // Behind tweeter area (positive = upper)
+port_flare_r = 15;        // Radius of smooth flare at port exit (mm)
+
+// --- Split plane ---
+// Split aligned with front end of port tube so port stays 
+// entirely in the back half (no split through the port)
+// Port front = enclosure_depth - wall - port_length
+split_z = enclosure_depth - wall - port_length;  // ~60.7mm from front
+
+// --- Driver parameters ---
+
+// Tang Band W4-1720 (surface mounted)
+// Dimensions from mechanical drawing
+woofer_cutout_dia = 95.5;        // Baffle cutout diameter (mm)
+woofer_flange_dia = 125.5;       // Overall flange OD (mm)
+woofer_screw_circle_dia = 115.0; // Screw hole circle diameter (mm)
+woofer_screw_dia = 5.2;          // Driver flange hole diameter (mm) - passes M4
+woofer_screw_cbore_dia = 8.5;    // Screw counterbore diameter (mm)
+woofer_screw_count = 4;          // Number of mounting screws
+woofer_flange_thick = 4.5;       // Flange thickness (mm)
+woofer_total_depth = 89;         // Total depth behind baffle (mm)
+woofer_magnet_dia = 90;          // Magnet diameter for clearance (mm)
+woofer_y_offset = -45;           // Below center
+// M4 heat-set inserts for woofer mounting
+woofer_insert_dia = 5.6;         // M4 heat-set insert hole diameter
+woofer_insert_depth = 6;         // Insert pocket depth (mm)
+
+// Fountek NeoCD1.0 (flush mounted, ROUND faceplate)
+// Dimensions from mechanical drawing
+tweeter_faceplate_dia = 100;      // Round faceplate OD (mm)
+tweeter_cutout_dia = 76;          // Baffle cutout for body (mm)
+tweeter_recess_depth = 4.0;       // Faceplate thickness / flush recess (mm)
+tweeter_ribbon_w = 24;            // Ribbon opening width (mm)  
+tweeter_ribbon_h = 46;            // Ribbon opening height (mm)
+tweeter_screw_spacing = 60.8;     // Square screw pattern spacing (mm)
+tweeter_screw_dia = 3.5;          // Driver faceplate hole diameter (mm) - passes M3
+tweeter_screw_count = 4;          // 4 screws in square pattern
+tweeter_body_dia = 80;            // Body barrel diameter behind baffle (mm)
+tweeter_rear_width = 55;          // Rear body width (mm)
+tweeter_mount_depth = 70;         // Total depth behind baffle (66 + 4mm faceplate)
+tweeter_y_offset = 55;            // Above center
+// M3 heat-set inserts for tweeter mounting
+tweeter_insert_dia = 4.5;         // M3 heat-set insert hole diameter
+tweeter_insert_depth = 5;         // Insert pocket depth (mm)
+
+// --- Assembly hardware ---
+bolt_dia = 4.2;           // M4 through-hole diameter
+insert_dia = 5.6;         // M4 heat-set insert hole
+insert_depth = 8;          // Insert pocket depth
+bolt_landing_dia = 8;      // Counterbore/landing diameter for bolt head
+bolt_inset = 12;           // Distance from edge to bolt center
+
+// --- Tongue-and-groove seal joint ---
+// Tongue on front half, groove in back half
+// Self-aligning + sealing with foam tape or TPU in groove
+tongue_width = 3;          // Width of tongue ridge (mm)
+tongue_height = 4;         // Tongue protrusion past split face (mm)
+tongue_clearance = 0.3;    // Gap per side for print tolerance (mm)
+seal_depth = 1;            // Extra groove depth below tongue for foam/TPU (mm)
+tongue_inset = 5;          // From outer wall to tongue center (mm)
+
+// --- Binding post plate ---
+// From mechanical drawing: square plate with corner screws
+terminal_outer = 100.6;          // Overall plate size (mm, square)
+terminal_cutout = 76.5;          // Inner cutout that passes through wall (mm, square)
+terminal_cutout_r = 4;           // Inner cutout corner radius (R4)
+terminal_screw_spacing = 84.5;   // Screw hole spacing (mm, square pattern)
+terminal_screw_dia = 5.5;        // Screw hole diameter (mm)
+terminal_insert_depth = 3;       // Depth the plate lip inserts into wall (mm)
+terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
+
+// --- Rendering ---
+$fn = 100;
+
+// ========================
+// CORE SHAPE: TAPERED WEDGE
+// ========================
+
+// 2D cross-section at depth z (0=front, enclosure_depth=back)
+// Smoothly tapers from baffle dims to back dims
+// Incorporates front edge roundover in the first baffle_roundover mm
+module cross_section_at(z) {
+    t = z / enclosure_depth;
+    t_curved = pow(t, taper_power);
+    
+    // Base interpolated dimensions (baffle → back taper)
+    w_base = baffle_width * (1 - t_curved) + back_width * t_curved;
+    h_base = baffle_height * (1 - t_curved) + back_height * t_curved;
+    r_base = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
+    
+    // Front edge roundover: in the first baffle_roundover mm of depth,
+    // reduce width and height to create a smooth curved lip
+    // Uses a circular profile: at z=0 the section is inset by roundover,
+    // at z=baffle_roundover it reaches full size
+    if (z < baffle_roundover && baffle_roundover > 0) {
+        // Circular roundover profile
+        // At z=0: inset = baffle_roundover (maximum reduction)
+        // At z=baffle_roundover: inset = 0 (full size)
+        frac = z / baffle_roundover;
+        // Circular profile: inset = R - sqrt(R² - (R-z)²) = R(1 - sqrt(1-(1-frac)²))
+        roundover_inset = baffle_roundover * (1 - sqrt(1 - pow(1 - frac, 2)));
+        
+        w = max(0.1, w_base - 2 * roundover_inset);
+        h = max(0.1, h_base - 2 * roundover_inset);
+        r = min(r_base, w/2 - 0.1, h/2 - 0.1);
+        
+        offset(r = r)
+            square([max(0.1, w - 2*r), max(0.1, h - 2*r)], center = true);
+    } else {
+        w = w_base;
+        h = h_base;
+        r_safe = min(r_base, w/2 - 0.1, h/2 - 0.1);
+        
+        offset(r = r_safe)
+            square([max(0.1, w - 2*r_safe), max(0.1, h - 2*r_safe)], center = true);
+    }
+}
+
+// Build outer shell by hulling adjacent slices
+// Uses finer slicing in the roundover zone for smooth curvature
+module outer_shape() {
+    // Fine slices in roundover zone
+    roundover_slices = 20;
+    if (baffle_roundover > 0) {
+        for (i = [0 : roundover_slices - 1]) {
+            z0 = baffle_roundover * i / roundover_slices;
+            z1 = baffle_roundover * (i + 1) / roundover_slices;
+            hull() {
+                translate([0, 0, z0])
+                    linear_extrude(height = 0.01)
+                        cross_section_at(z0);
+                translate([0, 0, z1])
+                    linear_extrude(height = 0.01)
+                        cross_section_at(z1);
+            }
+        }
+    }
+    
+    // Regular slices for the rest of the body
+    body_slices = 40;
+    z_start = max(0.01, baffle_roundover);
+    for (i = [0 : body_slices - 1]) {
+        z0 = z_start + (enclosure_depth - z_start) * i / body_slices;
+        z1 = z_start + (enclosure_depth - z_start) * (i + 1) / body_slices;
+        hull() {
+            translate([0, 0, z0])
+                linear_extrude(height = 0.01)
+                    cross_section_at(z0);
+            translate([0, 0, z1])
+                linear_extrude(height = 0.01)
+                    cross_section_at(z1);
+        }
+    }
+}
+
+// Inner cavity cross-section (inset by wall thickness)
+module inner_cross_section_at(z) {
+    t = z / enclosure_depth;
+    t_curved = pow(t, taper_power);
+    
+    w_outer = baffle_width * (1 - t_curved) + back_width * t_curved;
+    h_outer = baffle_height * (1 - t_curved) + back_height * t_curved;
+    r_outer = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
+    
+    w = w_outer - 2 * wall;
+    h = h_outer - 2 * wall;
+    r = max(1, r_outer - wall);
+    r_safe = min(r, max(0.1, w/2 - 0.1), max(0.1, h/2 - 0.1));
+    
+    if (w > 0.2 && h > 0.2) {
+        offset(r = r_safe)
+            square([max(0.1, w - 2*r_safe), max(0.1, h - 2*r_safe)], center = true);
+    }
+}
+
+// Full inner cavity
+module inner_cavity() {
+    slices = 50;
+    // Cavity starts at wall depth from front, ends at wall depth from back
+    for (i = [0 : slices - 1]) {
+        z0 = wall + (enclosure_depth - 2*wall) * i / slices;
+        z1 = wall + (enclosure_depth - 2*wall) * (i + 1) / slices;
+        hull() {
+            translate([0, 0, z0])
+                linear_extrude(height = 0.01)
+                    inner_cross_section_at(z0);
+            translate([0, 0, z1])
+                linear_extrude(height = 0.01)
+                    inner_cross_section_at(z1);
+        }
+    }
+}
+
+// ========================
+// DRIVER CUTOUTS
+// ========================
+
+// Woofer rear chamfer parameters
+woofer_chamfer_start = 3;     // Depth of straight bore before chamfer begins (mm)
+                               // Leaves material for screw thread engagement
+woofer_chamfer_angle = 45;     // Chamfer angle (degrees from bore wall)
+woofer_bore_r = woofer_cutout_dia / 2;
+woofer_chamfer_depth = wall - woofer_chamfer_start;
+woofer_chamfer_expand = woofer_chamfer_depth * tan(woofer_chamfer_angle);
+
+module woofer_cutout() {
+    translate([0, woofer_y_offset, 0]) {
+        // Unified bore + rear chamfer as a single solid of revolution
+        // Profile: straight bore for woofer_chamfer_start depth,
+        // then 45° chamfer widening toward the inside
+        rotate_extrude($fn = $fn) {
+            // Straight bore section (front face to chamfer start)
+            translate([0, -1])
+                square([woofer_bore_r, woofer_chamfer_start + 1]);
+            
+            // 45° chamfer section (widens toward interior)
+            translate([0, woofer_chamfer_start])
+                polygon([
+                    [0, 0],
+                    [woofer_bore_r, 0],
+                    [woofer_bore_r + woofer_chamfer_expand, woofer_chamfer_depth + 1],
+                    [0, woofer_chamfer_depth + 1]
+                ]);
+        }
+        
+        // Heat-set insert pockets - 4x M4 on 115mm circle, diamond pattern (45° offset)
+        // Blind holes from front face for heat-set inserts
+        // M4 screws pass through driver flange into these inserts
+        for (i = [0 : woofer_screw_count - 1]) {
+            angle = i * (360 / woofer_screw_count) + 45;
+            translate([cos(angle) * woofer_screw_circle_dia/2,
+                       sin(angle) * woofer_screw_circle_dia/2, -0.1]) {
+                cylinder(d = woofer_insert_dia, h = woofer_insert_depth + 0.1);
+            }
+        }
+    }
+}
+
+module tweeter_cutout() {
+    translate([0, tweeter_y_offset, 0]) {
+        // Flush recess for round faceplate (100mm dia, 4mm deep)
+        translate([0, 0, -0.1])
+            cylinder(d = tweeter_faceplate_dia, h = tweeter_recess_depth + 0.1);
+        
+        // Through-hole for driver body (76mm cutout)
+        translate([0, 0, -1])
+            cylinder(d = tweeter_cutout_dia, h = wall + 2);
+        
+        // Heat-set insert pockets - 4x M3 in SQUARE pattern (60.8mm x 60.8mm)
+        // Pockets start at the recess floor (z = tweeter_recess_depth)
+        // and go deeper into the baffle
+        // M3 screws pass through faceplate into these inserts
+        for (sx = [-1, 1])
+            for (sy = [-1, 1])
+                translate([sx * tweeter_screw_spacing/2,
+                           sy * tweeter_screw_spacing/2,
+                           tweeter_recess_depth - 0.1])
+                    cylinder(d = tweeter_insert_dia, h = tweeter_insert_depth + 0.1);
+    }
+}
+
+// ========================
+// PORT
+// ========================
+
+// The port tube solid adds material inside the cavity for the port walls.
+// It stops at the inner back wall surface — the back wall itself
+// provides the remaining material, which the bore+flare then cuts through.
+module port_tube_solid() {
+    translate([port_x_offset, port_y_offset, enclosure_depth - wall - port_length])
+        cylinder(d = port_diameter + 2*port_wall_thick, 
+                 h = port_length);
+}
+
+// Unified port bore + flare as a single solid of revolution.
+// 2D profile in the r-z plane (r = radial distance from port axis):
+//   - Straight bore wall (r = port_diameter/2) from port entrance 
+//     up to where the flare begins
+//   - Quarter-circle flare from bore wall outward to the back face
+//   - Extends past back face to ensure clean through-cut
+// This is subtracted from the enclosure in one operation.
+module port_bore() {
+    // Z coordinates (absolute, along enclosure depth axis)
+    port_start_z = enclosure_depth - wall - port_length;
+    flare_start_z = enclosure_depth - port_flare_r;  // where curve begins
+    back_face_z = enclosure_depth;
+    
+    bore_r = port_diameter / 2;
+    
+    translate([port_x_offset, port_y_offset, 0]) {
+        rotate_extrude($fn = $fn) {
+            // Build the 2D bore+flare profile as a union of shapes
+            // All in the positive-r half-plane (required by rotate_extrude)
+            
+            // 1. Straight bore: rectangle from port entrance to flare start
+            //    Width = bore radius, positioned at r=0 to r=bore_r
+            translate([0, port_start_z - 1])
+                square([bore_r, flare_start_z - port_start_z + 1]);
+            
+            // 2. Quarter-circle flare zone: 
+            //    Square minus circle gives us the flare cutout
+            //    The square covers from r=0 to r=bore_r+flare_r
+            //    and from z=flare_start_z to z=back_face_z+1
+            translate([0, flare_start_z])
+                difference() {
+                    square([bore_r + port_flare_r, port_flare_r + 1]);
+                    // Quarter circle: center at (bore_r + flare_r, 0)
+                    // This creates the concave curve from the bore wall
+                    // tangent at z=flare_start_z, curving out to the 
+                    // back face tangent at r=bore_r+flare_r
+                    translate([bore_r + port_flare_r, 0])
+                        circle(r = port_flare_r, $fn = 60);
+                }
+        }
+    }
+}
+
+// ========================
+// TERMINAL CUP
+// ========================
+
+module terminal_cutout() {
+    // Position on back face, centered horizontally
+    translate([0, terminal_y_offset, enclosure_depth - wall - 1]) {
+        // Main through-hole (76.5 x 76.5mm with R4 corners)
+        linear_extrude(height = wall + 2)
+            offset(r = terminal_cutout_r)
+                square([terminal_cutout - 2*terminal_cutout_r,
+                        terminal_cutout - 2*terminal_cutout_r], center = true);
+        
+        // Recess for plate flange (100.6 x 100.6mm, 3mm deep from outside)
+        translate([0, 0, wall + 1 - terminal_insert_depth])
+            linear_extrude(height = terminal_insert_depth + 1)
+                offset(r = 7)  // R7 outer corners per drawing
+                    square([terminal_outer - 14, terminal_outer - 14], center = true);
+        
+        // 4x screw holes (84.5mm square pattern, Ø5.5mm)
+        for (sx = [-1, 1])
+            for (sy = [-1, 1])
+                translate([sx * terminal_screw_spacing/2,
+                           sy * terminal_screw_spacing/2, 0])
+                    cylinder(d = terminal_screw_dia, h = wall + 2);
+    }
+}
+
+// ========================
+// BOLT PATTERN (SPLIT-PLANE PERIMETER)
+// ========================
+
+// 8 bolts around the perimeter of the split plane cross-section.
+// Bolt from BACK through back half wall → into heat-set inserts in front pillars.
+// Pillars in front half run from baffle to split face; back pillars match.
+module bolt_positions() {
+    t = split_z / enclosure_depth;
+    t_curved = pow(t, taper_power);
+    w_at_split = baffle_width * (1 - t_curved) + back_width * t_curved;
+    h_at_split = baffle_height * (1 - t_curved) + back_height * t_curved;
+    
+    positions = [
+        // Top and bottom center
+        [0, h_at_split/2 - bolt_inset],
+        [0, -(h_at_split/2 - bolt_inset)],
+        // Left and right center  
+        [w_at_split/2 - bolt_inset, 0],
+        [-(w_at_split/2 - bolt_inset), 0],
+        // Four corners (inset from edges)
+        [w_at_split/2 - bolt_inset, h_at_split/2 - bolt_inset - 15],
+        [-(w_at_split/2 - bolt_inset), h_at_split/2 - bolt_inset - 15],
+        [w_at_split/2 - bolt_inset, -(h_at_split/2 - bolt_inset - 15)],
+        [-(w_at_split/2 - bolt_inset), -(h_at_split/2 - bolt_inset - 15)],
+    ];
+    
+    for (pos = positions) {
+        translate([pos[0], pos[1], 0])
+            children();
+    }
+}
+
+// Through-holes for bolt shanks through the back half
+module bolt_through_holes() {
+    bolt_positions()
+        translate([0, 0, split_z - 1])
+            cylinder(d = bolt_dia, h = enclosure_depth - split_z + 2);
+}
+
+// Counterbores on the back exterior for bolt heads
+// The enclosure tapers, so bolts exit through angled side walls.
+// Strategy: find the z depth where the cross-section still provides
+// at least 4mm of material around each bolt center (enough for an 8mm
+// landing), then cut an 8mm cylinder from that z all the way to the back.
+// This creates a flat perpendicular face at the right depth in the wall.
+// The bolt head sits on this flat; slight overhang past the curve is OK.
+
+// Function to find the deepest z where the cross-section edge is at least
+// 'clearance' mm from a point (px, py). Uses the taper formula.
+// Returns the z where the bolt center has exactly 'clearance' to the edge.
+function landing_z(px, py, clearance) = 
+    let(
+        // For the x-direction: find z where half-width = abs(px) + clearance
+        target_w = 2 * (abs(px) + clearance),
+        // w(z) = baffle_width*(1-tc) + back_width*tc = target_w
+        // tc = (baffle_width - target_w) / (baffle_width - back_width)
+        tc_x = (abs(px) < 0.1) ? 1 :
+               (baffle_width - target_w) / (baffle_width - back_width),
+        
+        // For the y-direction: find z where half-height = abs(py) + clearance  
+        target_h = 2 * (abs(py) + clearance),
+        tc_y = (abs(py) < 0.1) ? 1 :
+               (baffle_height - target_h) / (baffle_height - back_height),
+        
+        // Use whichever constraint is tighter (smaller tc = shallower z)
+        tc = max(0.001, min(tc_x, tc_y)),
+        z = enclosure_depth * pow(tc, 1/taper_power)
+    ) z;
+
+// Uniform landing z: use the shallowest (most restrictive) bolt position
+// so all bolts are the same length. Computed by finding the minimum
+// landing_z across all 8 bolt positions.
+function min_landing_z() = 
+    let(
+        t = split_z / enclosure_depth,
+        t_curved = pow(t, taper_power),
+        w = baffle_width * (1 - t_curved) + back_width * t_curved,
+        h = baffle_height * (1 - t_curved) + back_height * t_curved,
+        positions = [
+            [0, h/2 - bolt_inset],
+            [0, -(h/2 - bolt_inset)],
+            [w/2 - bolt_inset, 0],
+            [-(w/2 - bolt_inset), 0],
+            [w/2 - bolt_inset, h/2 - bolt_inset - 15],
+            [-(w/2 - bolt_inset), h/2 - bolt_inset - 15],
+            [w/2 - bolt_inset, -(h/2 - bolt_inset - 15)],
+            [-(w/2 - bolt_inset), -(h/2 - bolt_inset - 15)],
+        ],
+        zs = [for (p = positions) landing_z(p[0], p[1], bolt_landing_dia/2)]
+    ) min(zs);
+
+module bolt_counterbores() {
+    cut_z = min_landing_z();
+    
+    bolt_positions()
+        translate([0, 0, cut_z])
+            cylinder(d = bolt_landing_dia, h = enclosure_depth - cut_z + 1);
+}
+
+// Heat-set insert pockets in the FRONT half at the split face
+module insert_pockets() {
+    bolt_positions()
+        translate([0, 0, split_z - insert_depth])
+            cylinder(d = insert_dia, h = insert_depth + 0.1);
+}
+
+// ========================
+// PILLAR SYSTEM
+// ========================
+
+// Front pillars: baffle inner wall to split face
+// Back pillars: split face into back half with taper
+// Each pair meets at split plane with interlock boss/recess
+pillar_dia = 16;          // Outer diameter of support pillar (mm)
+pillar_length = split_z - wall;  // Front pillar length
+
+// Pillar interlock: boss on BACK half, recess on FRONT half (insert side)
+// This prevents heat-set insert expansion from interfering with the fit —
+// expansion around the recess is absorbed by clearance, while the boss
+// on the non-insert side stays at nominal dimensions.
+pillar_interlock_dia = 10;    // Boss/recess outer diameter (mm)
+pillar_interlock_h = 2;       // Boss height / recess depth (mm)
+pillar_interlock_clearance = 0.3;  // Gap per side for print tolerance
+
+// Back pillar extends from split face into back half
+back_pillar_depth = 30;       // Functional depth from split face (increased for coverage)
+
+// Taper on back pillars for overhang-free printing — gradual blend into wall
+back_pillar_taper_angle = 15;  // Degrees from vertical (gentler = longer taper)
+back_pillar_taper_h = (pillar_dia/2) / tan(back_pillar_taper_angle);
+
+// Front pillars: solid cylinders from inner baffle to split face
+module insert_pillars() {
+    bolt_positions()
+        translate([0, 0, wall])
+            cylinder(d = pillar_dia, h = pillar_length);
+}
+
+// Back pillars: from split face into back cavity with 15° taper
+module back_pillars() {
+    bolt_positions()
+        translate([0, 0, split_z]) {
+            cylinder(d = pillar_dia, h = back_pillar_depth);
+            translate([0, 0, back_pillar_depth])
+                cylinder(d1 = pillar_dia, d2 = 0, h = back_pillar_taper_h);
+        }
+}
+
+// Interlock RECESS on front pillars at split face (insert side)
+// The recess absorbs any heat-set insert expansion
+module pillar_interlock_recesses() {
+    bolt_positions()
+        translate([0, 0, split_z - pillar_interlock_h - 0.1])
+            cylinder(d = pillar_interlock_dia + 2*pillar_interlock_clearance, 
+                     h = pillar_interlock_h + 0.2);
+}
+
+// Interlock BOSS on back pillars at split face (no insert, stays nominal)
+// Protrudes past split_z into front half territory
+module pillar_interlock_bosses() {
+    bolt_positions()
+        translate([0, 0, split_z - pillar_interlock_h - 0.01])
+            difference() {
+                cylinder(d = pillar_interlock_dia, h = pillar_interlock_h + 0.01);
+                // Clear the bolt through-hole
+                translate([0, 0, -0.1])
+                    cylinder(d = bolt_dia + 1, h = pillar_interlock_h + 0.3);
+            }
+}
+
+// ========================
+// TONGUE-AND-GROOVE SEAL JOINT
+// ========================
+
+// 2D ring at the split plane, centered within the wall thickness.
+// Uses the outer and inner cross-sections at split_z, then creates
+// a ring at a specified width centered between them.
+// tongue_inset = distance from outer wall surface to ring center.
+module seal_ring_2d(ring_width) {
+    // Get outer cross-section dimensions at the split plane
+    t = split_z / enclosure_depth;
+    t_curved = pow(t, taper_power);
+    w_out = baffle_width * (1 - t_curved) + back_width * t_curved;
+    h_out = baffle_height * (1 - t_curved) + back_height * t_curved;
+    r_out = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
+    r_out_safe = min(r_out, w_out/2 - 0.1, h_out/2 - 0.1);
+    
+    // The ring center sits tongue_inset mm inside the outer surface
+    // Outer edge of ring: inset by (tongue_inset - ring_width/2) from outer
+    // Inner edge of ring: inset by (tongue_inset + ring_width/2) from outer
+    inset_outer = tongue_inset - ring_width/2;
+    inset_inner = tongue_inset + ring_width/2;
+    
+    w_ring_out = w_out - 2 * inset_outer;
+    h_ring_out = h_out - 2 * inset_outer;
+    r_ring_out = max(1, r_out_safe - inset_outer);
+    
+    w_ring_in = w_out - 2 * inset_inner;
+    h_ring_in = h_out - 2 * inset_inner;
+    r_ring_in = max(1, r_out_safe - inset_inner);
+    
+    difference() {
+        // Outer edge of ring
+        offset(r = min(r_ring_out, w_ring_out/2 - 0.1, h_ring_out/2 - 0.1))
+            square([max(0.1, w_ring_out - 2*min(r_ring_out, w_ring_out/2 - 0.1, h_ring_out/2 - 0.1)),
+                    max(0.1, h_ring_out - 2*min(r_ring_out, w_ring_out/2 - 0.1, h_ring_out/2 - 0.1))], center = true);
+        // Inner edge of ring
+        offset(r = min(r_ring_in, w_ring_in/2 - 0.1, h_ring_in/2 - 0.1))
+            square([max(0.1, w_ring_in - 2*min(r_ring_in, w_ring_in/2 - 0.1, h_ring_in/2 - 0.1)),
+                    max(0.1, h_ring_in - 2*min(r_ring_in, w_ring_in/2 - 0.1, h_ring_in/2 - 0.1))], center = true);
+    }
+}
+
+// Tongue: raised ridge on the front half's split face
+// Protrudes toward the back half
+module tongue() {
+    translate([0, 0, split_z - 0.01])
+        linear_extrude(height = tongue_height + 0.01)
+            seal_ring_2d(tongue_width);
+}
+
+// Groove: channel cut into the back half's split face
+// Wider than tongue by 2x clearance, deeper by seal_depth
+// Foam tape or TPU bead sits in the bottom of the groove
+module groove() {
+    groove_width = tongue_width + 2 * tongue_clearance;
+    groove_depth = tongue_height + seal_depth;
+    translate([0, 0, split_z - 0.1])
+        linear_extrude(height = groove_depth + 0.1)
+            seal_ring_2d(groove_width);
+}
+
+// ========================
+// FULL ENCLOSURE (ASSEMBLED)
+// ========================
+
+module full_enclosure() {
+    difference() {
+        union() {
+            // Main shell
+            difference() {
+                outer_shape();
+                inner_cavity();
+            }
+            
+            // Port tube (added to shell)
+            intersection() {
+                outer_shape();
+                port_tube_solid();
+            }
+            
+            // Front pillar bosses (inside front half)
+            intersection() {
+                inner_cavity();
+                insert_pillars();
+            }
+            
+            // Back pillar bosses (inside back half)
+            intersection() {
+                inner_cavity();
+                back_pillars();
+            }
+        }
+        
+        // Subtract all cutouts
+        woofer_cutout();
+        tweeter_cutout();
+        port_bore();
+        terminal_cutout();
+        bolt_through_holes();
+        insert_pockets();
+    }
+}
+
+// ========================
+// SPLIT INTO HALVES
+// ========================
+
+// Cutting block: everything in front of split plane
+module front_block() {
+    translate([-500, -500, -1])
+        cube([1000, 1000, split_z + 1]);
+}
+
+// Cutting block: everything behind split plane
+module back_block() {
+    translate([-500, -500, split_z])
+        cube([1000, 1000, 1000]);
+}
+
+// --- Front half (baffle side) ---
+// Contains: baffle, driver cutouts, front pillars with heat-set pockets
+// Tongue protrudes from split face for alignment and sealing
+// Interlock recesses in each pillar face accept bosses from back half
+// No visible hardware on front face
+module front_half() {
+    difference() {
+        union() {
+            intersection() {
+                full_enclosure();
+                front_block();
+            }
+            // Add tongue ridge on split face
+            intersection() {
+                outer_shape();  // Keep tongue within enclosure outline
+                tongue();
+            }
+        }
+        // Cut interlock recesses into front pillar faces
+        pillar_interlock_recesses();
+    }
+}
+
+// --- Back half ---
+// Contains: port tube (intact), terminal plate, back pillars,
+// bolt holes + counterbores
+// Groove in split face accepts tongue from front half
+// Interlock bosses protrude from each back pillar toward front half
+module back_half() {
+    union() {
+        difference() {
+            intersection() {
+                full_enclosure();
+                back_block();
+            }
+            // Counterbores for bolt heads on back exterior
+            bolt_counterbores();
+            // Cut groove into split face for tongue + seal strip
+            groove();
+        }
+        // Add interlock bosses on back pillar faces
+        // These protrude past split_z into front half territory
+        pillar_interlock_bosses();
+    }
+}
+
+// ========================
+// SEAL VISUALIZATION
+// ========================
+
+// 3D tongue-and-groove joint for visualization
+module seal_joint_3d() {
+    color("Gold", 0.9) tongue();
+    color("DarkOrange", 0.5) groove();
+}
+
+// ========================
+// WHAT TO RENDER / EXPORT
+// ========================
+
+// ======= DEFAULT: Full assembled visualization =======
+color("SlateBlue", 0.7) full_enclosure();
+
+// ======= Exploded view (shows pillar interlocks + tongue-and-groove) =======
+// translate([0, 0, -40]) color("SteelBlue", 0.8) front_half();
+// translate([0, 0, 40]) color("CornflowerBlue", 0.8) back_half();
+
+// ======= EXPORT OPTIONS (uncomment ONE at a time) =======
+
+// Front half (baffle side) - PETG
+// Rotate so split face is down on build plate
+// rotate([180,0,0]) front_half();
+
+// Back half - PETG  
+// Print with split face down on build plate
+// back_half();
+
+// Inner cavity only (for volume check in slicer)
+// inner_cavity();
+
+
+// ========================
+// VOLUME ESTIMATION
+// ========================
+// Approximate volume using Simpson's rule on cross-sections
+
+// Front cavity cross-section area
+_z_front = wall;
+_t_f = _z_front / enclosure_depth;
+_tc_f = pow(_t_f, taper_power);
+_w_f = (baffle_width - 2*wall) * (1 - _tc_f) + max(0, back_width - 2*wall) * _tc_f;
+_h_f = (baffle_height - 2*wall) * (1 - _tc_f) + max(0, back_height - 2*wall) * _tc_f;
+_A_front = _w_f * _h_f;
+
+// Mid cavity cross-section area
+_z_mid = enclosure_depth / 2;
+_t_m = _z_mid / enclosure_depth;
+_tc_m = pow(_t_m, taper_power);
+_w_m = (baffle_width - 2*wall) * (1 - _tc_m) + max(0, back_width - 2*wall) * _tc_m;
+_h_m = (baffle_height - 2*wall) * (1 - _tc_m) + max(0, back_height - 2*wall) * _tc_m;
+_A_mid = _w_m * _h_m;
+
+// Back cavity cross-section area
+_z_back = enclosure_depth - wall;
+_t_b = _z_back / enclosure_depth;
+_tc_b = pow(_t_b, taper_power);
+_w_b = (baffle_width - 2*wall) * (1 - _tc_b) + max(0, back_width - 2*wall) * _tc_b;
+_h_b = (baffle_height - 2*wall) * (1 - _tc_b) + max(0, back_height - 2*wall) * _tc_b;
+_A_back = _w_b * _h_b;
+
+// Simpson's rule: V = (h/6)(A1 + 4*A_mid + A2)
+_cavity_length = enclosure_depth - 2*wall;
+_vol_mm3 = (_cavity_length / 6) * (_A_front + 4*_A_mid + _A_back);
+_vol_liters = _vol_mm3 / 1e6;
+
+// Port tube displacement
+_port_outer_dia = port_diameter + 2*port_wall_thick;
+_port_vol_mm3 = PI/4 * pow(_port_outer_dia, 2) * port_length;
+_port_vol_liters = _port_vol_mm3 / 1e6;
+
+// Pillar displacement (approximate - 8 front + 8 back pillars)
+_pillar_vol_liters = 0.02;  // Rough estimate for pillar pairs
+
+// Net volume
+_net_vol = _vol_liters - _port_vol_liters - _pillar_vol_liters;
+
+echo("============================================");
+echo(str("  SPEEDSTER v2 - VOLUME ESTIMATE"));
+echo(str("  Gross cavity:   ", _vol_liters, " L"));
+echo(str("  Port tube:      -", _port_vol_liters, " L"));
+echo(str("  Pillars (approx): -", _pillar_vol_liters, " L"));
+echo(str("  ----------------------------------------"));
+echo(str("  Net air volume:  ", _net_vol, " L"));
+echo(str("  Target:          ", target_volume_liters, " L"));
+echo(str("  Difference:      ", _net_vol - target_volume_liters, " L"));
+echo("============================================");
+echo(str("  Enclosure: ", baffle_width, "W x ", baffle_height, "H x ", enclosure_depth, "D mm"));
+echo(str("  Back:      ", back_width, "W x ", back_height, "H mm"));
+echo(str("  Wall:      ", wall, " mm PETG"));
+echo(str("  Taper:     power=", taper_power));
+echo("============================================");
+echo(str("  Tune depth (enclosure_depth) to adjust volume."));
+echo(str("  ~1mm depth change ≈ ", round(_A_mid/1000)/1000, " L"));
+echo("============================================");
+echo("");
+echo("  DRIVER FIT CHECK:");
+_woofer_top = woofer_y_offset + woofer_flange_dia/2;
+_tweeter_bottom = tweeter_y_offset - tweeter_faceplate_dia/2;
+_driver_gap = _tweeter_bottom - _woofer_top;
+echo(str("  Woofer flange top edge:   y=", _woofer_top, " mm"));
+echo(str("  Tweeter faceplate bottom: y=", _tweeter_bottom, " mm"));
+echo(str("  Gap between drivers:      ", _driver_gap, " mm"));
+echo(str("    (negative = overlap, Carmody's original overlaps slightly)"));
+_woofer_screw_edge = woofer_screw_circle_dia/2 + woofer_screw_dia/2;
+_baffle_inner_half = (baffle_width - 2*wall) / 2;
+echo(str("  Woofer screw outermost:   ", _woofer_screw_edge, "mm from center"));
+echo(str("  Baffle inner half-width:  ", _baffle_inner_half, "mm"));
+echo(str("  Screw-to-wall clearance:  ", _baffle_inner_half - _woofer_screw_edge, "mm"));
+echo(str("  Woofer depth behind baffle: ", woofer_total_depth, "mm"));
+echo(str("  Tweeter depth behind baffle: ", tweeter_mount_depth, "mm"));
+echo("");
+echo("  DIFFRACTION / BAFFLE STEP:");
+echo(str("  Baffle width:     ", baffle_width, "mm"));
+echo(str("  Edge roundover:   ", baffle_roundover, "mm radius"));
+_baffle_step_hz = round(344000 / (PI * baffle_width));
+echo(str("  Est. baffle step: ~", _baffle_step_hz, " Hz"));
+echo(str("  Roundover effective above: ~", round(344000 / (2 * PI * baffle_roundover)), " Hz"));
+echo("");
+echo("  For precise volume: export inner_cavity() as STL,");
+echo("  import into Bambu Studio → check volume in cm³");
+echo("");
+
+
+// ========================
+// PRINT NOTES
+// ========================
+// 
+// PETG Settings (10mm walls):
+//   Layer height: 0.2mm
+//   Perimeters: 5-6 (to fill most of the 10mm wall)
+//   Infill: 50-80% gyroid (for remaining wall fill)
+//   Top/bottom layers: 8+
+//   Supports: Yes, for driver cutouts and counterbores
+//
+// Print orientation:
+//   Front half: baffle face DOWN on bed (split face up)
+//   Back half:  split face DOWN on build plate
+//
+// Assembly:
+//   1. Print both halves (pillars + interlocks integral to each)
+//   2. Clean up supports from driver cutouts
+//   3. Install M4 heat-set inserts into front half pillars (8x enclosure bolts)
+//   4. Install M4 heat-set inserts into woofer screw holes (4x, from front face)
+//   5. Install M3 heat-set inserts into tweeter recess floor (4x, from recess)
+//   6. Mount crossover board in back cavity
+//   7. Run speaker wire from back to front through split plane
+//   8. Press foam tape or TPU strip into groove on back half split face
+//   9. Add polyfill loosely to cavity
+//   10. Align tongue into groove and interlock bosses into recesses,
+//       mate halves, bolt from BACK with M4 caps
+//       (bolt heads on rear tapered walls, no hardware on front)
+//   11. Mount tweeter (flush into recess) with M3 screws
+//   12. Mount woofer (surface mount) with M4 screws
+//   13. Connect drivers to crossover
+//   14. Install binding post plate on rear
+//
+// Hardware BOM (per speaker):
+//   Enclosure assembly:
+//     8x M4 heat-set inserts (Ø5.6mm × 8mm deep) - front half pillars
+//     8x M4 × 16mm socket head cap screws - from back
+//   Woofer mounting:
+//     4x M4 heat-set inserts (Ø5.6mm × 6mm deep) - baffle front face
+//     4x M4 × 10mm socket head cap screws - through driver flange
+//   Tweeter mounting:
+//     4x M3 heat-set inserts (Ø4.5mm × 5mm deep) - recess floor
+//     4x M3 × 8mm socket head cap screws - through faceplate
+//   Seal strip (one of):
+//     Closed-cell foam tape ~3mm wide, pressed into groove
+//     OR TPU filament bead laid into groove before mating
+//   Binding post plate:
+//     4x wood screws or self-tappers per plate spec
+//
+// Pillar interlock system:
+//   8x 16mm dia pillar pairs (front + back) at split-plane perimeter
+//   Front pillars: baffle inner wall to split face
+//   Back pillars: split face + 30mm into back half, with 15° taper (~30mm cone)
+//   Interlock BOSS on back pillar face (protrudes into front half)
+//   Interlock RECESS on front pillar face (absorbs heat-set insert expansion)
+//   Boss/recess: 10mm dia × 2mm, 0.3mm clearance per side
+//   Boss on non-insert side stays at nominal dims; recess on insert side
+//   absorbs thermal expansion from heat-set installation
+//
+// Tongue-and-groove joint:
+//   Tongue: 3mm wide × 4mm tall ridge on front half split face
+//   Groove: 3.6mm wide × 5mm deep channel in back half split face
+//   Self-aligning in X and Y, seal strip compressed in groove bottom
+//
+// Airtightness:
+//   PETG at 5+ perimeters is inherently airtight
+//   Tongue-and-groove + foam/TPU seals the split joint
+//   8 pillar pairs with interlocks provide structural rigidity
+//   Test: cover port, push woofer cone gently
+//   Should resist and return slowly
