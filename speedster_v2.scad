@@ -964,25 +964,38 @@ module seal_joint_3d() {
 // WHAT TO RENDER / EXPORT
 // ========================
 
-// ======= DEFAULT: Full assembled visualization =======
-color("SlateBlue", 0.7) full_enclosure();
+// render_mode controls what is displayed:
+//   0 = Full assembled (default)
+//   1 = Exploded view (front/back separated)
+//   2 = Front half only
+//   3 = Back half only
+//   4 = Inner cavity (for volume check)
+// Override from CLI: openscad -D render_mode=1 ...
+render_mode = 0;
 
-// ======= Exploded view (shows pillar interlocks + tongue-and-groove) =======
-// translate([0, 0, -40]) color("SteelBlue", 0.8) front_half();
-// translate([0, 0, 40]) color("CornflowerBlue", 0.8) back_half();
-
-// ======= EXPORT OPTIONS (uncomment ONE at a time) =======
-
-// Front half (baffle side) - PETG
-// Rotate so split face is down on build plate
-// rotate([180,0,0]) front_half();
-
-// Back half - PETG  
-// Print with split face down on build plate
-// back_half();
-
-// Inner cavity only (for volume check in slicer)
-// inner_cavity();
+// Display rotation: model uses Y=vertical, but OpenSCAD screen uses Z=up.
+// rotate([90,0,0]) stands the speaker upright for PNG renders (tweeter on top).
+// After rotation: X=horizontal, Y=depth(0=baffle,-185=back), Z=height.
+// Model center: (0, -92.5, 0). See render.sh for standard camera angles.
+// For STL export, set render_mode and don't apply this rotation.
+rotate([90, 0, 0])
+if (render_mode == 0) {
+    // Full assembled visualization
+    color("SlateBlue", 0.7) full_enclosure();
+} else if (render_mode == 1) {
+    // Exploded view (shows pillar interlocks + tongue-and-groove)
+    translate([0, 0, -40]) color("SteelBlue", 0.8) front_half();
+    translate([0, 0, 40]) color("CornflowerBlue", 0.8) back_half();
+} else if (render_mode == 2) {
+    // Front half (baffle side)
+    color("SteelBlue", 0.8) front_half();
+} else if (render_mode == 3) {
+    // Back half
+    color("CornflowerBlue", 0.8) back_half();
+} else if (render_mode == 4) {
+    // Inner cavity only (for volume check in slicer)
+    inner_cavity();
+}
 
 
 // ========================

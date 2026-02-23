@@ -53,6 +53,22 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 Open `speedster_v2.scad` in OpenSCAD. The default view shows the full assembled enclosure. Check the console for volume estimation and driver fit diagnostics.
 
+#### Standard Render Set
+
+Run `./render.sh` to generate 7 standard PNG renders (1920×1080) in the `renders/` directory:
+
+| View | Description |
+|------|-------------|
+| `front.png` | Front baffle face — driver cutouts, roundover, heat-set insert holes |
+| `back.png` | Back panel — terminal recess, port exit flare, bolt counterbores |
+| `side.png` | Side profile — taper from wide baffle to narrow back |
+| `three_quarter_front.png` | 3/4 front isometric — hero shot |
+| `three_quarter_back.png` | 3/4 back isometric — terminal + port + taper |
+| `exploded_front.png` | Exploded from front — split halves, pillar interlocks, tongue-and-groove |
+| `exploded_back.png` | Exploded from back — port tube, crossover bosses, internal features |
+
+The `render_mode` variable can also be set from CLI: `openscad -D render_mode=1` for exploded, `=2` for front half only, `=3` for back half only, `=4` for inner cavity.
+
 ### Exporting for Print
 
 Uncomment ONE export option at the bottom of the file:

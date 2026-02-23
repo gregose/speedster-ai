@@ -95,6 +95,19 @@ Converted binding post plate mounting from through-hole self-tappers to heat-set
 - **Insert pockets bored from recess floor inward** (toward cavity). Total depth used: 3mm recess + 6mm insert = 9mm of the 10mm wall, leaving 1mm of material on the cavity side.
 - **Rationale:** Self-tapping screws into PETG wear out quickly with repeated assembly. Heat-set inserts allow unlimited disassembly for crossover tuning and driver swaps, consistent with the rest of the enclosure's insert-based design.
 
+### Session 10: Render Pipeline + Camera Angles
+
+Established a CLI render pipeline for visual validation and documentation:
+
+- **`render_mode` variable** (0–4): Assembled, exploded, front half, back half, cavity. Set via `-D render_mode=N` from CLI.
+- **Display rotation** `rotate([90,0,0])`: Transforms model Y→Z so speaker stands upright with tweeter on top. After rotation: X=horizontal, Y=depth(0=baffle, -185=back), Z=height(+up). Model center at (0, -92.5, 0).
+- **7 standard views** with tuned camera angles (eye/center format):
+  - Front, back, side (assembled) — show baffle face, back panel, taper profile
+  - 3/4 front, 3/4 back (assembled) — hero shots showing depth and features
+  - Exploded front, exploded back — split halves revealing internal structure
+- **`render.sh`**: Shell script generating all 7 renders in parallel (~1.5s each, `--preview` mode, 1920×1080).
+- **Key insight:** Previous camera angles were wrong because they didn't account for the coordinate transform. The front baffle is at Y=0 (negative Y camera position), back at Y=185 (positive Y).
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
@@ -121,6 +134,8 @@ Converted binding post plate mounting from through-hole self-tappers to heat-set
 ```
 claudsters/
 ├── speedster_v2.scad    # Complete parametric OpenSCAD model
+├── render.sh            # Standard render pipeline (7 PNG views)
+├── renders/             # Generated PNG renders
 ├── README.md            # Project overview, BOM, assembly
 ├── claude.md            # This file — AI agent context
 └── analysis.md          # Design verification and analysis
@@ -134,10 +149,11 @@ claudsters/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
+6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -185=back), Z=height(+up). Model center is at (0, -92.5, 0). Camera uses eye/center 6-parameter format.
+
 ## Open Items / Future Work
 
 - Crossover mounting solution inside back cavity
-- Validation render in OpenSCAD (render times may be long due to hull operations)
 - STL export and slicer test for printability
 - Prototype print and fit check
 - Acoustic measurement comparison to original Speedster
