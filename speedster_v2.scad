@@ -131,6 +131,43 @@ terminal_screw_dia = 5.5;        // Screw hole diameter (mm)
 terminal_insert_depth = 3;       // Depth the plate lip inserts into wall (mm)
 terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
 
+// --- Crossover PCB mounting ---
+// Two PCBs (high-pass and low-pass) separated from V-cut stack,
+// mounted on opposing side walls with components facing inward.
+// PCB dimensions from gregose/speedster-crossover KiCad layout.
+xover_pcb_width = 92;            // PCB width (mm) - maps to Z axis
+xover_pcb_height = 126;          // PCB height (mm) - maps to Y axis
+xover_pcb_thick = 1.6;           // PCB board thickness (mm)
+xover_comp_height = 40;          // Max component height, most parts (mm)
+xover_comp_height_tall = 50;     // Tallest inductor height (mm)
+xover_tall_pcb_y = 80;           // Tall inductor Y position on PCB (from top=0)
+
+// Mounting hole positions on PCB (from top-left corner as 0,0):
+//   (43,5), (87,5), (87,121), (5,121)
+// Hole diameter: 3.3mm (accepts M3 screws)
+xover_holes = [[43,5], [87,5], [87,121], [5,121]];
+xover_hole_dia = 3.3;
+
+// Mounting boss parameters
+xover_boss_dia = 10;             // Boss pad diameter (mm)
+xover_insert_dia = 4.5;          // M3 heat-set insert hole diameter
+xover_insert_depth = 5;          // Insert pocket depth (mm)
+xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
+
+// PCB placement in enclosure coordinates
+// PCB long axis (126mm) runs vertically (Y), short axis (92mm) along Z
+// Board top at y=19, bottom at y=-107
+// Z from 62 to 154 (just past split plane to ~20mm before binding posts)
+xover_y_top = 19;                // Enclosure Y of PCB top edge
+xover_z_start = 62;              // Enclosure Z of PCB front edge (past split)
+
+// Binding post dimensions (Dayton BPP-SN)
+// Side-by-side posts at x=±9.5mm from terminal center (y=-45)
+// Intrusion past inner wall: ~24mm (15mm thread + 9mm solder lug)
+// Conservative clearance envelope: 30mm depth from inner back wall
+bp_spacing = 19.05;              // Post center-to-center spacing (mm)
+bp_intrusion = 30;               // Conservative depth past inner wall (mm)
+
 // --- Rendering ---
 $fn = 100;
 
@@ -639,6 +676,159 @@ module groove() {
 }
 
 // ========================
+// CROSSOVER PCB MOUNTING BOSSES
+// ========================
+
+// Helper: compute inner half-width at a given z depth
+function inner_half_w_at(z) = 
+    let(
+        t = z / enclosure_depth,
+        tc = pow(t, taper_power),
+        w_outer = baffle_width * (1 - tc) + back_width * tc
+    ) (w_outer - 2 * wall) / 2;
+
+// Helper: compute inner half-height at a given z depth
+function inner_half_h_at(z) =
+    let(
+        t = z / enclosure_depth,
+        tc = pow(t, taper_power),
+        h_outer = baffle_height * (1 - tc) + back_height * tc
+    ) (h_outer - 2 * wall) / 2;
+
+// Convert PCB hole coordinates to enclosure coordinates.
+// sign: -1 for left wall (normal orientation), +1 for right wall (flipped)
+//
+// Left wall:  components face +x (inward). PCB mounted as-is.
+//   PCB top-left (0,0) is at enclosure (z_start, y_top).
+//
+// Right wall: components face -x (inward). PCB rotated 180° around its
+//   vertical axis so the component side faces the opposite direction.
+//   This flips the x-coordinate: pcb_x → (pcb_width - pcb_x).
+//   The y-coordinate is unchanged.
+//
+// Returns [enc_z, enc_y]
+function xover_hole_enc(hole, sign) = 
+    let(
+        // Left wall (sign<0): PCB flipped so components face +x (inward)
+        // Right wall (sign>0): PCB normal so components face -x (inward)
+        pcb_x = (sign < 0) ? (xover_pcb_width - hole[0]) : hole[0],
+        pcb_y = hole[1]
+    )
+    [xover_z_start + pcb_x, xover_y_top - pcb_y];
+
+// Find the PCB face x-position magnitude.
+// Uses the narrowest inner half-width across all hole z-positions
+// for BOTH orientations, minus minimum boss depth.
+// Returns a POSITIVE value; actual face_x is ±this value per side.
+function xover_pcb_face_x_abs() =
+    let(
+        // Left wall uses flipped pcb_x, right wall uses normal pcb_x
+        left_hws = [for (h = xover_holes) inner_half_w_at(xover_z_start + (xover_pcb_width - h[0]))],
+        right_hws = [for (h = xover_holes) inner_half_w_at(xover_z_start + h[0])],
+        min_hw = min([each left_hws, each right_hws])
+    ) min_hw - xover_boss_min_depth;
+
+// Crossover mounting bosses for ONE side wall.
+// Each boss is a cylinder extending from the curved inner wall surface
+// inward to a common flat PCB mounting face, plus a 45° triangular brace
+// above each boss (in +Z direction, toward split plane) for print support.
+//
+// Back half prints with back wall DOWN on build plate, so Z DECREASES
+// going upward during printing. Bosses near the back wall print first;
+// bosses near the split plane print last. Each boss needs support from
+// the +Z side (material already printed below it = closer to back wall).
+//
+// sign: -1 for left wall, +1 for right wall
+module xover_bosses(sign) {
+    face_abs = xover_pcb_face_x_abs();
+    
+    for (h = xover_holes) {
+        enc = xover_hole_enc(h, sign);
+        ez = enc[0];  // enclosure z
+        ey = enc[1];  // enclosure y
+        hw = inner_half_w_at(ez);  // inner half-width at this z
+        
+        // Boss spans from wall inner surface to PCB face
+        boss_len = hw - face_abs;
+        
+        // Brace extends in +Z direction (toward split plane / print "up")
+        // Height = boss_len for 45°, clamped to not exceed cavity back wall
+        brace_h = min(boss_len, (enclosure_depth - wall) - ez - 0.5);
+        
+        if (sign < 0) {
+            // Left wall: wall at x=-hw, face at x=-face_abs
+            // Boss cylinder
+            translate([-hw, ey, ez])
+                rotate([0, 90, 0])
+                    cylinder(d = xover_boss_dia, h = boss_len);
+            // 45° brace above boss (+Z direction, toward back wall)
+            // Triangular fin: full height at wall, tapers to 0 at face
+            hull() {
+                // Thin slab at wall end, extends up by brace_h
+                translate([-hw, ey - xover_boss_dia/2, ez])
+                    cube([0.01, xover_boss_dia, brace_h]);
+                // Thin slab at face end, near-zero height
+                translate([-face_abs - 0.01, ey - xover_boss_dia/2, ez])
+                    cube([0.01, xover_boss_dia, 0.01]);
+            }
+        } else {
+            // Right wall: wall at x=+hw, face at x=+face_abs
+            // Boss cylinder
+            translate([face_abs, ey, ez])
+                rotate([0, 90, 0])
+                    cylinder(d = xover_boss_dia, h = boss_len);
+            // 45° brace above boss (+Z direction, toward back wall)
+            hull() {
+                // Thin slab at wall end, extends up by brace_h
+                translate([hw - 0.01, ey - xover_boss_dia/2, ez])
+                    cube([0.01, xover_boss_dia, brace_h]);
+                // Thin slab at face end, near-zero height
+                translate([face_abs, ey - xover_boss_dia/2, ez])
+                    cube([0.01, xover_boss_dia, 0.01]);
+            }
+        }
+    }
+}
+
+// Heat-set insert pockets in crossover bosses.
+// Pocket is bored into the PCB-facing end of each boss.
+// The pocket goes INTO the boss from the flat face toward the wall.
+module xover_insert_pockets(sign) {
+    face_abs = xover_pcb_face_x_abs();
+    
+    for (h = xover_holes) {
+        enc = xover_hole_enc(h, sign);
+        ez = enc[0];
+        ey = enc[1];
+        
+        if (sign < 0) {
+            // Left wall: PCB face at x=-face_abs
+            // Bore in -x direction (toward wall at -hw)
+            translate([-face_abs, ey, ez])
+                rotate([0, -90, 0])
+                    cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
+        } else {
+            // Right wall: PCB face at x=+face_abs
+            // Bore in +x direction (toward wall at +hw)
+            translate([face_abs, ey, ez])
+                rotate([0, 90, 0])
+                    cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
+        }
+    }
+}
+
+// Both sets of crossover bosses (left and right walls)
+module xover_bosses_all() {
+    xover_bosses(-1);  // Left wall (PCB flipped so components face +x inward)
+    xover_bosses(+1);  // Right wall (PCB normal, components face -x inward)
+}
+
+module xover_insert_pockets_all() {
+    xover_insert_pockets(-1);
+    xover_insert_pockets(+1);
+}
+
+// ========================
 // FULL ENCLOSURE (ASSEMBLED)
 // ========================
 
@@ -668,6 +858,12 @@ module full_enclosure() {
                 inner_cavity();
                 back_pillars();
             }
+            
+            // Crossover PCB mounting bosses (both side walls)
+            intersection() {
+                inner_cavity();
+                xover_bosses_all();
+            }
         }
         
         // Subtract all cutouts
@@ -677,6 +873,9 @@ module full_enclosure() {
         terminal_cutout();
         bolt_through_holes();
         insert_pockets();
+        
+        // Crossover mount insert pockets
+        xover_insert_pockets_all();
     }
 }
 
@@ -867,6 +1066,19 @@ echo("");
 echo("  For precise volume: export inner_cavity() as STL,");
 echo("  import into Bambu Studio → check volume in cm³");
 echo("");
+echo("  CROSSOVER PCB MOUNTING:");
+_xover_face_x = xover_pcb_face_x_abs();
+echo(str("  PCB face x-position:  ±", _xover_face_x, "mm from center"));
+echo(str("  PCB y range:          ", xover_y_top - xover_pcb_height, " to ", xover_y_top, "mm"));
+echo(str("  PCB z range:          ", xover_z_start, " to ", xover_z_start + xover_pcb_width, "mm"));
+_xover_port_clear = 25 - xover_y_top;
+echo(str("  Port clearance below: ", _xover_port_clear, "mm (port bottom at y=25)"));
+_bp_pcb_y = xover_y_top - (-45);
+echo(str("  BP at y=-45 maps to:  PCB y=", _bp_pcb_y, " (normal comp height zone)"));
+_xover_inductor_y = xover_y_top - xover_tall_pcb_y;
+echo(str("  Tall inductor at:     enc y=", _xover_inductor_y, " (BP zone: y=-60 to -30)"));
+echo(str("  Boss lengths:         ", xover_boss_min_depth, "mm min (at narrowest) to ~20mm"));
+echo("");
 
 
 // ========================
@@ -890,17 +1102,18 @@ echo("");
 //   3. Install M4 heat-set inserts into front half pillars (8x enclosure bolts)
 //   4. Install M4 heat-set inserts into woofer screw holes (4x, from front face)
 //   5. Install M3 heat-set inserts into tweeter recess floor (4x, from recess)
-//   6. Mount crossover board in back cavity
-//   7. Run speaker wire from back to front through split plane
-//   8. Press foam tape or TPU strip into groove on back half split face
-//   9. Add polyfill loosely to cavity
-//   10. Align tongue into groove and interlock bosses into recesses,
+//   6. Install M3 heat-set inserts into crossover bosses (8x, 4 per side wall)
+//   7. Mount high-pass PCB on one side wall, low-pass on opposite (M3 screws)
+//   8. Run speaker wire from back to front through split plane
+//   9. Press foam tape or TPU strip into groove on back half split face
+//   10. Add polyfill loosely to cavity
+//   11. Align tongue into groove and interlock bosses into recesses,
 //       mate halves, bolt from BACK with M4 caps
 //       (bolt heads on rear tapered walls, no hardware on front)
-//   11. Mount tweeter (flush into recess) with M3 screws
-//   12. Mount woofer (surface mount) with M4 screws
-//   13. Connect drivers to crossover
-//   14. Install binding post plate on rear
+//   12. Mount tweeter (flush into recess) with M3 screws
+//   13. Mount woofer (surface mount) with M4 screws
+//   14. Connect drivers to crossover
+//   15. Install binding post plate on rear
 //
 // Hardware BOM (per speaker):
 //   Enclosure assembly:
@@ -915,6 +1128,9 @@ echo("");
 //   Seal strip (one of):
 //     Closed-cell foam tape ~3mm wide, pressed into groove
 //     OR TPU filament bead laid into groove before mating
+//   Crossover mounting:
+//     8x M3 heat-set inserts (Ø4.5mm × 5mm deep) - side wall bosses (4 per side)
+//     8x M3 × 8mm socket head cap screws - through PCB holes (4 per board)
 //   Binding post plate:
 //     4x wood screws or self-tappers per plate spec
 //
@@ -932,6 +1148,20 @@ echo("");
 //   Tongue: 3mm wide × 4mm tall ridge on front half split face
 //   Groove: 3.6mm wide × 5mm deep channel in back half split face
 //   Self-aligning in X and Y, seal strip compressed in groove bottom
+//
+// Crossover PCB mounting (split boards, one per side wall):
+//   Two V-cut PCBs separated and mounted on opposing side walls
+//   Left wall: PCB flipped (rotated 180° around vertical), components face +x (inward)
+//   Right wall: PCB in normal orientation, components face -x (inward)
+//   Hole pattern differs per side due to asymmetric flip
+//   4x M3 heat-set inserts (Ø4.5mm × 5mm) per side wall (8 total)
+//   4x M3 × 8mm socket head cap screws per board (8 total)
+//   Boss pads integral to back half print, variable length 6-18mm
+//   Each boss has a 45° triangular brace below for print support
+//   PCB position: y=-107 to +19, z=62 to 154
+//   Port tube clearance: 6mm above PCB top edge
+//   Binding post clearance: components don't reach center at post y-level
+//   Tall inductor (PCB y=80) positioned below binding post zone
 //
 // Airtightness:
 //   PETG at 5+ perimeters is inherently airtight
