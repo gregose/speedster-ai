@@ -119,6 +119,21 @@ Added a matching concave flare to the cavity-side port opening, mirroring the ex
 - **No conflicts:** Bell clears all crossover bosses (on side walls at x=±hw), terminal cutout, and pillars. Port center at (0, 45) with max bell radius ~35mm stays well within the ~70mm inner half-width at the split plane.
 - **6 triangular gusset ribs** at the port tube-to-back-wall junction. Each rib is a hull of a vertical strip on the tube surface and a horizontal strip on the back wall, forming a triangular brace. 15mm tall along the tube, 10mm radial extent, 2mm thick. Spreads the tube-to-wall load across more layer lines for better FDM adhesion (the tube axis is parallel to layer lines, making this junction rely entirely on interlayer adhesion without the ribs).
 
+### Session 13: FDM-Printable Roundover Profile + Baffle Width
+
+Fixed an unprintable overhang on the front half (printed baffle-down) and ensured the woofer flange sits entirely within the flat baffle face:
+
+- **Problem:** The original 28mm circular roundover profile had a vertical tangent at z=0, creating 83° overhang in the first ~8mm (41 layers). The woofer flange (125.5mm OD) also overhung the 109mm flat baffle face by 8.25mm per side.
+- **Roundover profile replaced:** Circular quarter-arc replaced with a **cubic Hermite spline** that starts at exactly 45° overhang and monotonically decreases to 0°. The profile is defined by `roundover_inset_at(z)`, a compound function with two zones:
+  1. **Baffle edge chamfer** (z=0 to z=2mm): Linear 45° bevel softens the front face edge.
+  2. **Hermite cubic** (z=2mm to z=39mm): `p(f) = (2-s)f³ + (2s-3)f² - sf + 1` where `s = D/I` (depth/inset ratio). G1 continuous at the junction (both sides have matching 45° slope).
+- **Inset decoupled from depth:** New `roundover_depth` parameter (39mm) is separate from `baffle_roundover` inset (24mm). The ratio `s = 39/24 = 1.625` ensures the slope magnitude is monotonically decreasing.
+- **Baffle widened:** 165mm → 180mm (+15mm) so the flat face (132mm) accommodates the woofer flange (125.5mm) with 3.25mm margin per side. After the 2mm edge chamfer, the first-layer face is 128mm (1.25mm margin).
+- **Roundover inset reduced:** 28mm → 24mm. Diffraction effective above ~2281 Hz (vs ~1950 Hz). Still covers most of the woofer's upper range below the ~3-4 kHz crossover. The original MDF Speedster had no roundover at all.
+- **Inner cavity tracks roundover:** `inner_cross_section_at()` now also applies `roundover_inset_at(z)`, maintaining uniform 10mm wall thickness throughout the roundover zone. Previously the inner cavity ignored the roundover, which worked with the old shallow-inset circular profile but would cause negative wall thickness with the deeper extended profile.
+- **Depth reduced:** 185mm → 174mm to compensate the volume increase from the wider baffle. Net volume: 5.51L (target 5.5L).
+- **Split plane shifted:** z=60.7mm → z=49.7mm (computed from `depth - wall - port_length`). Still clears the roundover zone (39mm) with 10.7mm margin.
+
 ### Session 12: STL Hull Boundary Alignment Bugfix
 
 Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z≈114mm in the back half STL:
@@ -133,13 +148,15 @@ Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z�
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Baffle | 165 × 300 mm | Driver clearance + volume |
+| Baffle | 180 × 300 mm | Widened for woofer flange clearance on flat face |
 | Back | 118 × 240 mm, R42 corners | Terminal plate clearance |
-| Depth | 185 mm | Tuned for 5.49L net volume |
+| Depth | 174 mm | Tuned for 5.51L net volume |
 | Wall | 10 mm PETG | Stiffness parity with 1/2" MDF |
 | Taper | Power 2.0 (quadratic) | Volume concentration near baffle |
-| Roundover | 28 mm radius | Diffraction control > ~1950 Hz |
-| Split plane | z = 60.7 mm | Port tube stays in back half |
+| Roundover inset | 24 mm | Diffraction control > ~2281 Hz |
+| Roundover depth | 39 mm | Extended for ≤45° FDM overhang |
+| Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
+| Split plane | z = 49.7 mm | Port tube stays in back half |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
 | Port flare (exit) | 15 mm concave radius | Reduced turbulence at back face |
 | Port flare (entry) | 15 mm concave radius | Matching bell at cavity side |
@@ -157,7 +174,9 @@ Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z�
 ```
 claudsters/
 ├── speedster_v2.scad    # Complete parametric OpenSCAD model
+├── export.sh            # STL export pipeline (front + back halves)
 ├── render.sh            # Standard render pipeline (7 PNG views)
+├── models/              # Exported STL files for printing
 ├── renders/             # Generated PNG renders
 ├── README.md            # Project overview, BOM, assembly
 ├── claude.md            # This file — AI agent context
@@ -172,9 +191,11 @@ claudsters/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
-6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -185=back), Z=height(+up). Model center is at (0, -92.5, 0). Camera uses eye/center 6-parameter format.
+6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -174=back), Z=height(+up). Model center is at (0, -87, 0). Camera uses eye/center 6-parameter format.
 
 7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
+
+8. **Roundover profile:** The `roundover_inset_at(z)` function defines the compound front edge profile. It has a 2mm 45° chamfer at the baffle face, then a cubic Hermite spline blending to the full body width at `roundover_depth`. The inner cavity also applies this inset to maintain uniform wall thickness. When changing `baffle_roundover` or `roundover_depth`, keep the ratio `roundover_depth / baffle_roundover ≥ 1.0` to ensure max overhang ≤ 45°.
 
 ## Open Items / Future Work
 
