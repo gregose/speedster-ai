@@ -6,16 +6,16 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 | Spec | Original (Carmody) | Claudsters v2 |
 |------|-------------------|---------------|
-| Internal volume | 5.5 L | 5.49 L |
+| Internal volume | 5.5 L | 5.51 L |
 | Port tuning | ~55 Hz | ~55 Hz (same port) |
 | Port | 1.375" dia × 4.5" long | 34.925mm × 114.3mm + 15mm entry/exit flares |
 | Woofer | Tang Band W4-1720 (surface) | Same (surface mount, M4 heat-set inserts) |
 | Tweeter | Fountek NeoCD1.0 (flush) | Same (flush recess, M3 heat-set inserts) |
 | Wall material | 1/2" MDF | 10mm PETG (5-6 perimeters) |
-| Baffle width | 152mm (6") | 165mm (driver clearance for 10mm walls) |
+| Baffle width | 152mm (6") | 180mm (woofer flange clearance + 10mm walls) |
 | Bracing | None | 8× pillar pairs with interlocks |
-| Shape | Rectangular box | Curved-back wedge with 28mm front roundover |
-| Enclosure depth | ~152mm | 185mm |
+| Shape | Rectangular box | Curved-back wedge with 24mm front roundover |
+| Enclosure depth | ~152mm | 174mm |
 | Back dimensions | N/A (rectangular) | 118 × 240mm, R42 corners |
 
 ## Drivers
@@ -26,21 +26,44 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 ## Design Features
 
-**Curved-back wedge shape** with quadratic taper (power 2.0) from 165×300mm baffle to 118×240mm back. Concentrates volume near the baffle where driver clearance matters most, then tapers aggressively toward the back.
+**Curved-back wedge shape** with quadratic taper (power 2.0) from 180×300mm baffle to 118×240mm back. Concentrates volume near the baffle where driver clearance matters most, then tapers aggressively toward the back.
 
-**28mm front edge roundover** smooths the baffle-to-side transition with a circular profile, reducing diffraction effects above ~1950 Hz. The original MDF box had sharp baffle edges.
+**24mm front edge roundover** with a cubic Hermite spline profile, plus a 2mm 45° baffle edge chamfer. Designed for FDM printability (max overhang exactly 45° when printed baffle-down). Reduces diffraction effects above ~2281 Hz. The original MDF box had sharp baffle edges — any roundover is an improvement.
 
 **Port flares** with 15mm concave radius at both the back face (exit) and cavity side (entry) reduce turbulence noise and chuffing at the port openings. Six triangular gusset ribs reinforce the port tube-to-back-wall junction for reliable FDM layer adhesion.
 
 **Woofer rear chamfer** at 45° opens the baffle bore behind the driver, reducing back-wave reflections off the cutout edge.
 
-**Front/back split** at z=60.7mm with tongue-and-groove seal joint. The split plane is aligned with the port tube front end so the port stays entirely in the back half.
+**Front/back split** at z=49.7mm with tongue-and-groove seal joint. The split plane is aligned with the port tube front end so the port stays entirely in the back half.
 
 **8 pillar pairs** at the split-plane perimeter provide wall reinforcement, bolt anchorage, and shear-resistant alignment via interlock boss/recess at the split face.
 
 **Bolt counterbore landing** computed analytically from the taper cross-section — finds the z-depth where the wall provides sufficient material for a flat bolt head seat, then cuts a uniform-depth pocket for all 8 bolts.
 
 **Crossover mounting bosses** on both side walls with heat-set inserts for M3 standoff screws. Each boss has a 45° triangular brace and D-shaped cross-section for overhang-free FDM printing.
+
+## Renders
+
+### Assembled Views
+
+| Front | Back | Side |
+|-------|------|------|
+| ![Front](renders/front.png) | ![Back](renders/back.png) | ![Side](renders/side.png) |
+
+| 3/4 Front | 3/4 Back |
+|-----------|----------|
+| ![3/4 Front](renders/three_quarter_front.png) | ![3/4 Back](renders/three_quarter_back.png) |
+
+### Exploded Views
+
+| Exploded Front | Exploded Back |
+|----------------|---------------|
+| ![Exploded Front](renders/exploded_front.png) | ![Exploded Back](renders/exploded_back.png) |
+
+## STL Downloads
+
+- [Front half](models/speedster_v2-front.stl) — print baffle-face down
+- [Back half](models/speedster_v2-back.stl) — print flat back-face down
 
 ## Using the SCAD File
 
@@ -71,24 +94,20 @@ The `render_mode` variable can also be set from CLI: `openscad -D render_mode=1`
 
 ### Exporting for Print
 
-Uncomment ONE export option at the bottom of the file:
+Run `./export.sh` to generate print-ready STL files in the `models/` directory:
 
-```scad
-// Front half (baffle side) - PETG
-rotate([180,0,0]) front_half();
-
-// Back half - PETG
-back_half();
-
-// Inner cavity only (for volume check in slicer)
-inner_cavity();
+```bash
+./export.sh           # exports to models/ (default)
+./export.sh mydir/    # exports to custom directory
 ```
 
-Then Render (F6) and Export as STL (F7).
+This exports both halves with full CGAL rendering and reports geometry status. STLs are ready to import directly into your slicer.
+
+Alternatively, in the OpenSCAD GUI, uncomment ONE export option at the bottom of the file, then Render (F6) and Export as STL (F7).
 
 ### Adjusting Volume
 
-Change `enclosure_depth` (currently 185mm). The echo block reports estimated volume. Each 1mm of depth change ≈ 0.019L.
+Change `enclosure_depth` (currently 174mm). The echo block reports estimated volume. Each 1mm of depth change ≈ 0.037L.
 
 ### Coordinate System
 
@@ -100,7 +119,7 @@ Change `enclosure_depth` (currently 185mm). The echo block reports estimated vol
 
 **Material:** PETG (mandatory for airtightness and stiffness)
 
-**Printer:** Bambu Lab H2D (or any printer with ≥165×300mm build area for front half, ≥118×240mm for back half)
+**Printer:** Bambu Lab H2D (or any printer with ≥180×300mm build area for front half, ≥118×240mm for back half)
 
 | Setting | Value | Rationale |
 |---------|-------|-----------|
@@ -108,11 +127,11 @@ Change `enclosure_depth` (currently 185mm). The echo block reports estimated vol
 | Perimeters | 5–6 | Fills most of 10mm wall, airtight |
 | Infill | 50–80% gyroid | Fills remaining wall, adds damping |
 | Top/bottom layers | 8+ | Solid baffle and back face |
-| Supports | Yes | Driver cutouts, counterbores |
+| Supports | Minimal | Driver cutouts, counterbores; roundover profile is ≤45° overhang |
 
 **Print orientation:**
-- Front half: baffle face DOWN (split face up) — best surface finish on the visible face
-- Back half: split face DOWN — pillar tapers print overhang-free
+- Front half: baffle face DOWN (split face up) — roundover profile designed for ≤45° overhang; best surface finish on visible face
+- Back half: flat back face DOWN (split face up) — large flat surface on build plate for best adhesion
 
 ## Assembly Instructions
 

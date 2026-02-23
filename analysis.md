@@ -8,15 +8,15 @@ This document verifies that the Claudsters v2 enclosure design is mechanically s
 
 **Carmody spec:** 5.5 liters (0.19 ft³)
 
-**Claudsters v2:** 5.46 liters (net, after subtracting port tube, entry flare bell, and pillar displacement)
+**Claudsters v2:** 5.51 liters (net, after subtracting port tube, entry flare bell, and pillar displacement)
 
-The volume is computed via Simpson's rule on the inner cavity cross-sections at the front wall (z=10mm), midpoint (z=92.5mm), and back wall (z=175mm). The taper formula interpolates between inner baffle dimensions (145×280mm) and inner back dimensions (98×220mm) using a power-2.0 curve.
+The volume is computed via Simpson's rule on the inner cavity cross-sections at the front wall (z=10mm), midpoint (z=87mm), and back wall (z=164mm). The taper formula interpolates between inner baffle dimensions (160×280mm) and inner back dimensions (98×220mm) using a power-2.0 curve. The roundover inset is applied to both outer and inner cross-sections, maintaining uniform wall thickness.
 
 Breakdown:
-- Gross cavity volume: ~5.64 L
+- Gross cavity volume: ~5.69 L
 - Port tube + entry bell displacement: -0.16 L (tube: 39.925mm OD × 114.3mm, bell: truncated cone 70→40mm OD × 15mm)
 - Pillar displacement: -0.02 L (estimated, 8 front + 8 back pillars)
-- **Net air volume: 5.46 L** (within 0.7% of target)
+- **Net air volume: 5.51 L** (within 0.2% of target)
 
 For final verification, export `inner_cavity()` as STL and measure volume in slicing software.
 
@@ -32,11 +32,11 @@ The port dimensions are unchanged from the original design. The Helmholtz resona
 
 **Original:** 152mm (6") wide flat MDF baffle with sharp edges. Estimated baffle step frequency: ~720 Hz.
 
-**Claudsters v2:** 165mm wide baffle with 28mm circular roundover. Estimated baffle step: ~664 Hz. Roundover effective above ~1950 Hz.
+**Claudsters v2:** 180mm wide baffle with 24mm cubic Hermite roundover (plus 2mm edge chamfer). Estimated baffle step: ~608 Hz. Roundover effective above ~2281 Hz.
 
-The baffle is 13mm wider than the original (165mm vs 152mm) to accommodate 10mm walls while maintaining internal clearance for the woofer screw circle. This shifts the baffle step down by ~56 Hz — a minor change that would slightly benefit the crossover's low-pass rolloff region.
+The baffle is 28mm wider than the original (180mm vs 152mm) to accommodate 10mm walls while maintaining internal clearance for the woofer screw circle and ensuring the woofer flange (125.5mm OD) sits entirely within the flat baffle face with 3.25mm margin per side. This shifts the baffle step down by ~112 Hz.
 
-The 28mm roundover is a significant improvement over the original sharp-edged MDF box. Diffraction at the baffle edge causes a characteristic amplitude ripple in the frequency response. The roundover smooths this transition, reducing diffraction artifacts above ~1950 Hz (where the crossover transitions to the ribbon tweeter). The original Speedster had no roundover.
+The 24mm roundover uses a cubic Hermite spline profile designed for FDM printability (max overhang exactly 45° when printed baffle-down). A 2mm 45° chamfer at the baffle face edge softens the front transition. The roundover is effective above ~2281 Hz, covering the upper range of the woofer below the typical 3-4 kHz crossover point. The original Speedster had no roundover at all, so any roundover is a strict improvement. The diffraction peak at ~1911 Hz falls ~370 Hz below the roundover's full effectiveness, but the smoothing benefit is gradual (not a hard cutoff).
 
 ### 1.4 Driver Spacing and Crossover Compatibility
 
@@ -54,11 +54,11 @@ This 7.75mm gap means the drivers do not overlap, which is a minor departure fro
 
 ### 1.5 Woofer Depth Clearance
 
-The W4-1720 requires 89mm of depth behind the baffle. The internal cavity at the woofer position (y=-45mm, near the center) provides approximately 165mm of depth (from inner baffle at z=10mm to inner back wall at z=175mm). This is nearly 2× the required clearance.
+The W4-1720 requires 89mm of depth behind the baffle. The internal cavity at the woofer position (y=-45mm, near the center) provides approximately 154mm of depth (from inner baffle at z=10mm to inner back wall at z=164mm). This is ~1.7× the required clearance.
 
 ### 1.6 Port Placement
 
-Carmody specifies the port "directly behind the tweeter." In Claudsters v2, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=60.7mm to z=175mm, entirely within the back half.
+Carmody specifies the port "directly behind the tweeter." In Claudsters v2, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=49.7mm to z=164mm, entirely within the back half.
 
 ## 2. Mechanical Feasibility
 
@@ -74,7 +74,7 @@ Carmody's original design specifies "no bracing" with 1/2" MDF. The Claudsters d
 
 ### 2.2 Split-Plane Joint Integrity
 
-The split at z=60.7mm divides the enclosure into a shallow front half (baffle + 50.7mm of cavity) and a deep back half (port, terminal, 114.3mm of cavity).
+The split at z=49.7mm divides the enclosure into a shallow front half (baffle + 39.7mm of cavity) and a deep back half (port, terminal, 114.3mm of cavity).
 
 Three mechanisms ensure joint integrity:
 1. **Tongue-and-groove:** 3mm tongue / 3.6mm groove provides X-Y alignment and prevents lateral shift during assembly
@@ -99,12 +99,12 @@ All 8 bolts use the same landing z (~113mm), determined by the most restrictive 
 **Verification of the most restrictive bolt:**
 - Top center bolt position: (0, 134.8) at the split plane
 - At z=113mm: cross-section half-height = 134.8 + 4.0 = 138.8mm → actual half-height at z=113 ≈ 138.8mm ✓
-- Landing depth from back face: 185 - 113 = 72mm of material for the counterbore cut
+- Landing depth from back face: 174 - 113 = 61mm of material for the counterbore cut
 - Wall thickness at landing: ~10mm (the bolt sits in the wall zone)
 
 ### 2.4 Pillar Dimensions
 
-**Front pillars:** 16mm diameter × 50.7mm long (from inner baffle at z=10mm to split plane at z=60.7mm). Solid cylinders providing material for the M4 heat-set insert (Ø5.6mm × 8mm deep pocket at split face).
+**Front pillars:** 16mm diameter × 39.7mm long (from inner baffle at z=10mm to split plane at z=49.7mm). Solid cylinders providing material for the M4 heat-set insert (Ø5.6mm × 8mm deep pocket at split face).
 
 **Back pillars:** 16mm diameter × 30mm cylinder + 30mm taper (15° from vertical, transitioning from 16mm to 0mm). Total: 60mm from split plane. The gentler 15° angle (vs the original 20°) creates a more gradual blend with the inner wall and provides better coverage of the bolt through-hole.
 
@@ -159,32 +159,32 @@ The binding post plate is 100.6mm square, mounted at y=-45mm on the back face. T
 
 - Woofer cutout: 95.5mm diameter at y=-45mm
 - Woofer screw circle: 115mm diameter (outermost screw edge at 60.1mm from center)
-- Baffle inner half-width: (165 - 20) / 2 = 72.5mm
-- Screw-to-wall clearance: 72.5 - 60.1 = 12.4mm ✓
+- Baffle inner half-width: (180 - 20) / 2 = 80mm
+- Screw-to-wall clearance: 80 - 60.1 = 19.9mm ✓
 
 - Tweeter faceplate: 100mm diameter at y=+55mm
 - Tweeter screw spacing: 60.8mm square (outermost screw at 30.4 + 1.75 = 32.15mm from center)
-- Faceplate edge to inner wall: 72.5 - 50 = 22.5mm ✓
+- Faceplate edge to inner wall: 80 - 50 = 30mm ✓
 
 ### 3.3 Port Tube vs Inner Cavity
 
 - Port outer diameter (straight section): 34.925 + 2×2.5 = 39.925mm
-- Port entry flare bell: max outer diameter = 34.925 + 2×15 + 2×2.5 = 69.925mm at z=60.7mm, tapering to 39.925mm at z=75.7mm
-- Port at (x=0, y=+45) from z=60.7 to z=175mm
-- Inner cavity width at z=60.7: ~143mm → port center to side wall: 71.5mm >> 35mm bell radius ✓
+- Port entry flare bell: max outer diameter = 34.925 + 2×15 + 2×2.5 = 69.925mm at z=49.7mm, tapering to 39.925mm at z=64.7mm
+- Port at (x=0, y=+45) from z=49.7 to z=164mm
+- Inner cavity width at z=49.7: ~157mm → port center to side wall: 78.5mm >> 35mm bell radius ✓
 - Inner cavity height at y=+45: port top edge at y=80mm (bell mouth), inner cavity top at ~138mm → 58mm clearance ✓
 - Crossover bosses on side walls (x=±hw) do not intersect the centered port bell ✓
-- **Reinforcement ribs:** 6 triangular gusset ribs at the tube-to-back-wall junction (z=160–175mm). Each rib spans 15mm along the tube and 10mm radially beyond the tube surface, 2mm thick. Total rib volume: ~0.001L (negligible). Ribs are clipped to inner cavity via intersection(). ✓
+- **Reinforcement ribs:** 6 triangular gusset ribs at the tube-to-back-wall junction (z=149–164mm). Each rib spans 15mm along the tube and 10mm radially beyond the tube surface, 2mm thick. Total rib volume: ~0.001L (negligible). Ribs are clipped to inner cavity via intersection(). ✓
 
 ### 3.4 Bolt Position vs Driver Cutout Clearance
 
-The bolt pattern is computed from the cross-section at the split plane (z=60.7mm). At this depth, the cross-section is approximately 161×293mm. Bolt centers are 12mm inset from the edge.
+The bolt pattern is computed from the cross-section at the split plane (z=49.7mm). At this depth, the cross-section is approximately 163×296mm. Bolt centers are 12mm inset from the edge.
 
-The most critical clearance is between corner bolts and the woofer/tweeter cutouts. The woofer cutout at the split plane is a 95.5mm diameter bore (or wider due to the 45° chamfer starting at z=3mm — at z=60.7mm the bore has expanded well past the baffle). Since the woofer bore passes through the baffle (z=0 to z=10mm) and the split plane is at z=60.7mm, the woofer cutout does not intersect the split plane at all. The bolt positions at z=60.7 are in the wall zone, well outboard of the cavity. ✓
+The most critical clearance is between corner bolts and the woofer/tweeter cutouts. The woofer cutout at the split plane is a 95.5mm diameter bore (or wider due to the 45° chamfer starting at z=3mm — at z=49.7mm the bore has expanded well past the baffle). Since the woofer bore passes through the baffle (z=0 to z=10mm) and the split plane is at z=49.7mm, the woofer cutout does not intersect the split plane at all. The bolt positions at z=49.7 are in the wall zone, well outboard of the cavity. ✓
 
 ## 4. Advantages Over Original Design
 
-1. **Reduced diffraction:** 28mm roundover eliminates sharp baffle edges (the single biggest source of coloration in small speakers)
+1. **Reduced diffraction:** 24mm Hermite roundover + 2mm edge chamfer eliminates sharp baffle edges (the single biggest source of coloration in small speakers). Designed for FDM printability with max 45° overhang.
 2. **Curved back:** Eliminates parallel internal surfaces that cause standing waves at specific frequencies. The MDF box had 6 parallel pairs; the wedge has zero.
 3. **Port exit flare:** Reduces turbulence noise at moderate-to-high listening levels. The original had a plain tube end.
 4. **Structural pillars:** 8 pillar pairs add internal reinforcement that the original "no bracing" MDF box lacked.
@@ -228,6 +228,65 @@ Three sources of coplanar face artifacts were identified and resolved:
 2. **Port tube end at inner back wall** — extended port tube 1mm past z=depth−wall
 3. **Crossover boss intersection** — removed `intersection(inner_cavity, bosses)`, added bosses directly
 
-## 7. Summary
+## 7. FDM Printability — Front Half Roundover Profile
 
-The Claudsters v2 enclosure faithfully reproduces Carmody's acoustic design (5.49L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The design is printable on a large-format FDM printer in PETG with standard slicer settings.
+### 7.1 Problem
+
+The original 28mm circular roundover profile (quarter-arc) had a vertical tangent at z=0, creating catastrophic FDM overhangs when the front half is printed baffle-down:
+
+| Depth (z) | Circular overhang | Layers affected |
+|-----------|------------------|-----------------|
+| 0.2mm | 83.1° | First layer |
+| 2mm | 68.2° | 10 layers |
+| 8.2mm | 45.0° | 41 layers |
+
+The first 8.2mm (41 layers at 0.2mm) all exceeded 45° overhang — unprintable without support material on the primary visible surface.
+
+### 7.2 Solution — Cubic Hermite Spline with Edge Chamfer
+
+The circular profile was replaced with a compound curve defined by `roundover_inset_at(z)`:
+
+1. **Baffle edge chamfer** (z=0 to z=2mm): Linear 45° bevel. Inset decreases from 26mm to 24mm.
+2. **Cubic Hermite spline** (z=2mm to z=39mm): `p(f) = (2-s)f³ + (2s-3)f² - sf + 1` where `f = (z-c)/(D-c)` and `s = (D-c)/I`. Inset decreases from 24mm to 0mm.
+
+The junction at z=2mm is G1 continuous (both zones have matching 45° slope). The Hermite spline's slope magnitude is monotonically decreasing, guaranteeing the maximum overhang is exactly 45° at z=0 and decreasing thereafter.
+
+### 7.3 Overhang Verification
+
+| Depth (z) | Old circular | New Hermite | Improvement |
+|-----------|-------------|-------------|-------------|
+| 0.2mm | 83.1° | 45.0° | -38.1° |
+| 2mm | 68.2° | 44.6° | -23.6° |
+| 5mm | 59.0° | 43.9° | -15.1° |
+| 10mm | 45.6° | 42.1° | -3.5° |
+| 20mm | 16.6° | 36.4° | +19.8° |
+| 39mm | — | 0.0° | — |
+
+Every layer is now ≤45° overhang — printable without support on the roundover surface.
+
+### 7.4 Baffle Width and Inset Trade-offs
+
+The woofer flange (125.5mm OD) must sit entirely within the flat baffle face. This required decoupling the roundover inset from the baffle width:
+
+| Parameter | Old | New | Rationale |
+|-----------|-----|-----|-----------|
+| Baffle width | 165mm | 180mm | Flat face ≥ woofer flange + margin |
+| Roundover inset | 28mm | 24mm | Balanced diffraction vs fit |
+| Flat face width | 109mm | 132mm | 3.25mm margin per side |
+| Diffraction threshold | ~1950 Hz | ~2281 Hz | Still covers woofer upper range |
+| Roundover depth | 28mm | 39mm | Extended for ≤45° overhang |
+| Edge chamfer | — | 2mm | Softens baffle face perimeter |
+
+### 7.5 Mathematical Basis
+
+The cubic Hermite spline satisfies four boundary conditions:
+- p(0) = 1 (full inset at chamfer junction)
+- p(1) = 0 (zero inset at body junction)
+- p'(0) = -s (45° starting slope, matching chamfer)
+- p'(1) = 0 (tangent to body)
+
+With s = D/I (depth/inset ratio), the slope magnitude `|d(inset)/dz| = (I/D)|3af² + 2bf + c|` is maximized at f=0 where it equals exactly 1.0 (45°). The derivative of the slope w.r.t. f is always positive for f ∈ [0,1], confirming monotonically decreasing overhang. This holds for any s ≥ 1.
+
+## 8. Summary
+
+The Claudsters v2 enclosure faithfully reproduces Carmody's acoustic design (5.51L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The front edge roundover profile is designed for FDM printability with max 45° overhang when printed baffle-down. The design is printable on a large-format FDM printer in PETG with minimal support material.

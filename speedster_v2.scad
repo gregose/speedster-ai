@@ -31,14 +31,17 @@ target_volume_liters = 5.5;
 wall = 10;                // PETG wall thickness (mm)
 
 // --- Baffle (front face) dimensions ---
-baffle_width = 165;       // External width at front (mm) - close to original 152mm
+baffle_width = 180;       // External width at front (mm) - widened for woofer flange clearance
 baffle_height = 300;      // External height (mm) - taller for volume
 baffle_corner_r = 15;     // Corner rounding on front face
 
 // --- Front edge roundover ---
 // Smooths baffle-to-side transition to reduce diffraction
 // Larger = better diffraction behavior, blends into taper
-baffle_roundover = 28;    // Front edge roundover radius (mm)
+baffle_roundover = 24;    // Front edge roundover inset (mm) — how far baffle face is narrowed
+roundover_depth = 39;     // Depth over which roundover blends to full body (mm)
+                          // Decoupled from inset for FDM printability (max overhang ≤ 45°)
+baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softens front edge
 
 // --- Back dimensions ---
 // NOTE: back_width must be >= terminal_outer + 15mm for binding plate to fit
@@ -47,7 +50,7 @@ back_height = 240;        // External height at rear (mm)
 back_corner_r = 42;       // Generous rounding on back
 
 // --- Depth ---
-enclosure_depth = 185;    // Total external depth (mm) - TUNED for 5.5L
+enclosure_depth = 174;    // Total external depth (mm) - TUNED for 5.5L
 
 // --- Taper curve ---
 // Controls the shape of the wedge taper
@@ -184,9 +187,30 @@ $fn = 100;
 // CORE SHAPE: TAPERED WEDGE
 // ========================
 
+// Roundover inset at depth z using compound profile:
+//   1. Small 45° chamfer from z=0 to z=baffle_edge_chamfer
+//   2. Cubic Hermite spline from z=chamfer to z=roundover_depth
+// G1 continuous at junction (both sides have 45° slope).
+// Max overhang exactly 45°, monotonically decreasing.
+function roundover_inset_at(z) =
+    let(c = baffle_edge_chamfer)
+    (z < c && c > 0) ?
+        // 45° chamfer zone: linear from (roundover + c) to roundover
+        baffle_roundover + c - z
+    : (z < roundover_depth && roundover_depth > 0) ?
+        let(
+            f = (z - c) / (roundover_depth - c),
+            s = (roundover_depth - c) / baffle_roundover,
+            a = 2 - s,
+            b = 2*s - 3,
+            cc = -s
+        )
+        baffle_roundover * (a*pow(f,3) + b*pow(f,2) + cc*f + 1)
+    : 0;
+
 // 2D cross-section at depth z (0=front, enclosure_depth=back)
 // Smoothly tapers from baffle dims to back dims
-// Incorporates front edge roundover in the first baffle_roundover mm
+// Incorporates front edge roundover in the first roundover_depth mm
 module cross_section_at(z) {
     t = z / enclosure_depth;
     t_curved = pow(t, taper_power);
@@ -196,20 +220,16 @@ module cross_section_at(z) {
     h_base = baffle_height * (1 - t_curved) + back_height * t_curved;
     r_base = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
     
-    // Front edge roundover: in the first baffle_roundover mm of depth,
-    // reduce width and height to create a smooth curved lip
-    // Uses a circular profile: at z=0 the section is inset by roundover,
-    // at z=baffle_roundover it reaches full size
-    if (z < baffle_roundover && baffle_roundover > 0) {
-        // Circular roundover profile
-        // At z=0: inset = baffle_roundover (maximum reduction)
-        // At z=baffle_roundover: inset = 0 (full size)
-        frac = z / baffle_roundover;
-        // Circular profile: inset = R - sqrt(R² - (R-z)²) = R(1 - sqrt(1-(1-frac)²))
-        roundover_inset = baffle_roundover * (1 - sqrt(1 - pow(1 - frac, 2)));
-        
-        w = max(0.1, w_base - 2 * roundover_inset);
-        h = max(0.1, h_base - 2 * roundover_inset);
+    // Front edge roundover: in the first roundover_depth mm of depth,
+    // reduce width and height to create a smooth curved lip.
+    // Uses cubic Hermite spline for FDM printability (baffle-down):
+    //   - Starts at exactly 45° slope at z=0
+    //   - Blends to 0° slope at z=roundover_depth (tangent to body)
+    //   - Max overhang exactly 45°, monotonically decreasing
+    ri = roundover_inset_at(z);
+    if (ri > 0) {
+        w = max(0.1, w_base - 2 * ri);
+        h = max(0.1, h_base - 2 * ri);
         r = min(r_base, w/2 - 0.1, h/2 - 0.1);
         
         offset(r = r)
@@ -227,12 +247,12 @@ module cross_section_at(z) {
 // Build outer shell by hulling adjacent slices
 // Uses finer slicing in the roundover zone for smooth curvature
 module outer_shape() {
-    // Fine slices in roundover zone
+    // Fine slices in roundover zone (now extends to roundover_depth)
     roundover_slices = 20;
-    if (baffle_roundover > 0) {
+    if (roundover_depth > 0) {
         for (i = [0 : roundover_slices - 1]) {
-            z0 = baffle_roundover * i / roundover_slices;
-            z1 = baffle_roundover * (i + 1) / roundover_slices;
+            z0 = roundover_depth * i / roundover_slices;
+            z1 = roundover_depth * (i + 1) / roundover_slices;
             hull() {
                 translate([0, 0, z0])
                     linear_extrude(height = 0.01)
@@ -246,7 +266,7 @@ module outer_shape() {
     
     // Regular slices for the rest of the body
     body_slices = 40;
-    z_start = max(0.01, baffle_roundover);
+    z_start = max(0.01, roundover_depth);
     for (i = [0 : body_slices - 1]) {
         z0 = z_start + (enclosure_depth - z_start) * i / body_slices;
         z1 = z_start + (enclosure_depth - z_start) * (i + 1) / body_slices;
@@ -262,6 +282,7 @@ module outer_shape() {
 }
 
 // Inner cavity cross-section (inset by wall thickness)
+// Also applies roundover profile so wall thickness stays uniform
 module inner_cross_section_at(z) {
     t = z / enclosure_depth;
     t_curved = pow(t, taper_power);
@@ -270,8 +291,9 @@ module inner_cross_section_at(z) {
     h_outer = baffle_height * (1 - t_curved) + back_height * t_curved;
     r_outer = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
     
-    w = w_outer - 2 * wall;
-    h = h_outer - 2 * wall;
+    ri = roundover_inset_at(z);
+    w = w_outer - 2 * wall - 2 * ri;
+    h = h_outer - 2 * wall - 2 * ri;
     r = max(1, r_outer - wall);
     r_safe = min(r, max(0.1, w/2 - 0.1), max(0.1, h/2 - 0.1));
     
@@ -292,12 +314,12 @@ module inner_cavity() {
     // Tiny offset to prevent exact coplanarity with outer_shape hull faces
     _eps = 0.001;
     
-    // Roundover zone: same 20 slices as outer_shape, clamped to [wall, roundover]
+    // Roundover zone: same 20 slices as outer_shape, clamped to [wall, roundover_depth]
     roundover_slices = 20;
-    if (baffle_roundover > wall) {
+    if (roundover_depth > wall) {
         for (i = [0 : roundover_slices - 1]) {
-            z0_raw = baffle_roundover * i / roundover_slices + _eps;
-            z1_raw = baffle_roundover * (i + 1) / roundover_slices + _eps;
+            z0_raw = roundover_depth * i / roundover_slices + _eps;
+            z1_raw = roundover_depth * (i + 1) / roundover_slices + _eps;
             z0 = max(wall, z0_raw);
             z1 = z1_raw;
             if (z0 < z1) {
@@ -313,9 +335,9 @@ module inner_cavity() {
         }
     }
 
-    // Body zone: same 40 slices as outer_shape, clamped to [roundover, depth-wall]
+    // Body zone: same 40 slices as outer_shape, clamped to [roundover_depth, depth-wall]
     body_slices = 40;
-    z_start = max(0.01, baffle_roundover);
+    z_start = max(0.01, roundover_depth);
     for (i = [0 : body_slices - 1]) {
         z0_raw = z_start + (enclosure_depth - z_start) * i / body_slices + _eps;
         z1_raw = z_start + (enclosure_depth - z_start) * (i + 1) / body_slices + _eps;
