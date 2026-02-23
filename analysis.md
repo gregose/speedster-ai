@@ -110,7 +110,19 @@ All 8 bolts use the same landing z (~113mm), determined by the most restrictive 
 
 The back cavity depth is 114.3mm (from split plane to inner back wall). The back pillar occupies 60mm of this, leaving 54.3mm clear — plenty of room for the crossover board, wiring, and polyfill.
 
-### 2.5 Interlock Boss/Recess Configuration
+### 2.5 Crossover Mounting Bosses
+
+Crossover PCBs mount vertically on the left and right inner side walls via cylindrical bosses with M3 heat-set inserts. Each boss extends horizontally from the wall to a common flat PCB face plane.
+
+**Print support geometry:** The back half prints with the back wall down, so bosses are horizontal cantilevered cylinders that need support from below. Each boss has:
+
+1. **D-shaped cross-section:** The cylinder is hulled with a thin slab at z = ez + boss_r, creating a flat bottom that mates flush with the triangular brace surface. This eliminates the crescent-shaped gaps that would otherwise exist between a round cylinder and a flat support.
+
+2. **45° triangular brace:** A wedge extending from the bottom of the boss toward the back wall (+Z). Full height (= boss_len) at the wall end, tapering to zero at the PCB face end. The brace starts at the very bottom of the boss (z = ez + boss_r, not the center), so every layer of the boss prints on ≤45° supported material.
+
+These features ensure the bosses print cleanly without slicer-generated support material.
+
+### 2.6 Interlock Boss/Recess Configuration
 
 The interlock boss is on the **back half** pillar (protrudes 2mm past split plane toward front). The recess is on the **front half** pillar (2mm deep pocket at split face).
 
@@ -119,7 +131,7 @@ This orientation was chosen specifically because the front half has heat-set ins
 - The boss on the back half (no insert) stays at nominal dimensions
 - The result is actually a slightly tighter (better) friction fit
 
-### 2.6 Heat-Set Insert Engagement
+### 2.7 Heat-Set Insert Engagement
 
 All heat-set inserts have adequate wall material surrounding them:
 

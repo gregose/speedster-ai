@@ -1,0 +1,14 @@
+# macOS
+.DS_Store
+._*
+
+# OpenSCAD
+*.stl
+*.3mf
+*.amf
+
+# Editor/IDE
+*.swp
+*~
+.vscode/
+.idea/

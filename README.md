@@ -40,6 +40,8 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 **Bolt counterbore landing** computed analytically from the taper cross-section — finds the z-depth where the wall provides sufficient material for a flat bolt head seat, then cuts a uniform-depth pocket for all 8 bolts.
 
+**Crossover mounting bosses** on both side walls with heat-set inserts for M3 standoff screws. Each boss has a 45° triangular brace and D-shaped cross-section for overhang-free FDM printing.
+
 ## Using the SCAD File
 
 ### Prerequisites

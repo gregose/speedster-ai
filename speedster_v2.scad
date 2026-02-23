@@ -751,39 +751,44 @@ module xover_bosses(sign) {
         // Boss spans from wall inner surface to PCB face
         boss_len = hw - face_abs;
         
-        // Brace extends in +Z direction (toward split plane / print "up")
-        // Height = boss_len for 45°, clamped to not exceed cavity back wall
-        brace_h = min(boss_len, (enclosure_depth - wall) - ez - 0.5);
+        // Brace extends in +Z direction from the bottom of the boss
+        // (ez + boss_dia/2) so the full cylinder is supported at 45°
+        boss_r = xover_boss_dia / 2;
+        brace_h = min(boss_len, (enclosure_depth - wall) - (ez + boss_r) - 0.5);
         
         if (sign < 0) {
             // Left wall: wall at x=-hw, face at x=-face_abs
-            // Boss cylinder
-            translate([-hw, ey, ez])
-                rotate([0, 90, 0])
-                    cylinder(d = xover_boss_dia, h = boss_len);
-            // 45° brace above boss (+Z direction, toward back wall)
-            // Triangular fin: full height at wall, tapers to 0 at face
+            // Boss: cylinder hulled with flat slab at bottom so edges
+            // meet the brace surface flush (no crescent gaps)
             hull() {
-                // Thin slab at wall end, extends up by brace_h
-                translate([-hw, ey - xover_boss_dia/2, ez])
+                translate([-hw, ey, ez])
+                    rotate([0, 90, 0])
+                        cylinder(d = xover_boss_dia, h = boss_len);
+                translate([-hw, ey - boss_r, ez + boss_r])
+                    cube([boss_len, xover_boss_dia, 0.01]);
+            }
+            // 45° brace from bottom of boss (+Z direction, toward back wall)
+            hull() {
+                translate([-hw, ey - boss_r, ez + boss_r])
                     cube([0.01, xover_boss_dia, brace_h]);
-                // Thin slab at face end, near-zero height
-                translate([-face_abs - 0.01, ey - xover_boss_dia/2, ez])
+                translate([-face_abs - 0.01, ey - boss_r, ez + boss_r])
                     cube([0.01, xover_boss_dia, 0.01]);
             }
         } else {
             // Right wall: wall at x=+hw, face at x=+face_abs
-            // Boss cylinder
-            translate([face_abs, ey, ez])
-                rotate([0, 90, 0])
-                    cylinder(d = xover_boss_dia, h = boss_len);
-            // 45° brace above boss (+Z direction, toward back wall)
+            // Boss: cylinder hulled with flat slab at bottom
             hull() {
-                // Thin slab at wall end, extends up by brace_h
-                translate([hw - 0.01, ey - xover_boss_dia/2, ez])
+                translate([face_abs, ey, ez])
+                    rotate([0, 90, 0])
+                        cylinder(d = xover_boss_dia, h = boss_len);
+                translate([face_abs, ey - boss_r, ez + boss_r])
+                    cube([boss_len, xover_boss_dia, 0.01]);
+            }
+            // 45° brace from bottom of boss (+Z direction, toward back wall)
+            hull() {
+                translate([hw - 0.01, ey - boss_r, ez + boss_r])
                     cube([0.01, xover_boss_dia, brace_h]);
-                // Thin slab at face end, near-zero height
-                translate([face_abs, ey - xover_boss_dia/2, ez])
+                translate([face_abs, ey - boss_r, ez + boss_r])
                     cube([0.01, xover_boss_dia, 0.01]);
             }
         }

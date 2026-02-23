@@ -70,7 +70,7 @@ Attempted to move all 8 bolts to the flat back face for simpler counterbores. Re
 2. Back panel becomes cluttered
 3. Required specialty 180mm M4 bolts
 
-### Current Session: Bolt Landing Solution + Pillar Refinements
+### Session 7: Bolt Landing Solution + Pillar Refinements
 
 Final resolution of the bolt-on-curved-wall problem:
 
@@ -78,6 +78,14 @@ Final resolution of the bolt-on-curved-wall problem:
 - **Uniform bolt length:** All 8 counterbores use the shallowest (most restrictive) landing z (~113mm), so all bolts are the same standard length (~M4×60mm).
 - **Back pillar extension:** Increased from 15mm to 30mm depth past split face, with taper angle reduced from 20° to 15° for a more gradual blend into the inner wall (~60mm total pillar+taper). Covers more of the bolt through-hole.
 - **Interlock swap:** Boss moved to back half (no heat-set insert, stays at nominal size), recess moved to front half (absorbs any expansion from heat-set insert installation).
+
+### Session 8: Crossover Boss Print Support Refinements
+
+Improved the crossover PCB mounting bosses for overhang-free FDM printing:
+
+- **45° brace start shifted:** The triangular support brace previously started at the boss center (`ez`), leaving the bottom half of the cylinder unsupported. Moved brace start to `ez + boss_r` (bottom of boss in print orientation) so the full cylinder sits on a 45° ramp with no overhang.
+- **D-shaped boss cross-section:** Hulled each boss cylinder with a thin slab at `z = ez + boss_r` to create a flat-bottomed profile. This eliminates the crescent-shaped gaps between the round cylinder and the flat brace surface, giving a seamless transition from boss to support.
+- **Result:** Every layer of the crossover boss prints with ≤45° overhang — no support material needed for these features.
 
 ## Current Locked Parameters
 
