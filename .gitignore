@@ -6,6 +6,7 @@
 *.stl
 *.3mf
 *.amf
+!models/*.stl
 
 # Editor/IDE
 *.swp

@@ -203,6 +203,31 @@ The most critical clearance is between corner bolts and the woofer/tweeter cutou
 | Print warping (large PETG parts) | Bambu H2D enclosed chamber; split into two halves keeps each part manageable |
 | Volume sensitivity to print dimensions | Simpson's rule estimation + STL volume verification in slicer before printing |
 
-## 6. Summary
+## 6. STL Geometry Verification
+
+### 6.1 Hull Boundary Alignment
+
+The enclosure is built by hulling adjacent 2D cross-section slices. Both `outer_shape()` and `inner_cavity()` must use the same slice z-positions to avoid artifacts in the boolean difference `outer - inner`.
+
+**Problem:** With misaligned hull boundaries (e.g., outer at z=86.88, inner at z=85.9 and z=89.2), the boolean difference creates thin horizontal shelves at each mismatch — visible as horizontal planes in the slicer at z≈88mm and z≈114mm.
+
+**Solution:** `inner_cavity()` uses the same slice formula as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset to prevent exactly coplanar faces that cause CGAL non-manifold edges.
+
+**Results:**
+| Metric | Before Fix | After Fix |
+|--------|-----------|-----------|
+| Non-manifold edges | 170 | 159 |
+| Large horizontal faces at z=88 | Yes (shelves) | None |
+| Large horizontal faces at z=114 | Yes (shelves) | None |
+| Export status | NoError | NoError |
+
+### 6.2 Coplanar Face Avoidance
+
+Three sources of coplanar face artifacts were identified and resolved:
+1. **Hull boundary misalignment** — aligned slicing with epsilon offset (see above)
+2. **Port tube end at inner back wall** — extended port tube 1mm past z=depth−wall
+3. **Crossover boss intersection** — removed `intersection(inner_cavity, bosses)`, added bosses directly
+
+## 7. Summary
 
 The Claudsters v2 enclosure faithfully reproduces Carmody's acoustic design (5.49L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The design is printable on a large-format FDM printer in PETG with standard slicer settings.

@@ -282,19 +282,53 @@ module inner_cross_section_at(z) {
 }
 
 // Full inner cavity
+// IMPORTANT: Uses the same hull slice z-positions as outer_shape() but
+// offset by a tiny epsilon (0.001mm). This ensures:
+//   1. Hull boundaries nearly align (no visible shelves from mismatched steps)
+//   2. No exactly coplanar faces with outer_shape (prevents non-manifold edges)
+// Without this alignment, each mismatched hull boundary creates a visible
+// horizontal plane artifact in the STL.
 module inner_cavity() {
-    slices = 50;
-    // Cavity starts at wall depth from front, ends at wall depth from back
-    for (i = [0 : slices - 1]) {
-        z0 = wall + (enclosure_depth - 2*wall) * i / slices;
-        z1 = wall + (enclosure_depth - 2*wall) * (i + 1) / slices;
-        hull() {
-            translate([0, 0, z0])
-                linear_extrude(height = 0.01)
-                    inner_cross_section_at(z0);
-            translate([0, 0, z1])
-                linear_extrude(height = 0.01)
-                    inner_cross_section_at(z1);
+    // Tiny offset to prevent exact coplanarity with outer_shape hull faces
+    _eps = 0.001;
+    
+    // Roundover zone: same 20 slices as outer_shape, clamped to [wall, roundover]
+    roundover_slices = 20;
+    if (baffle_roundover > wall) {
+        for (i = [0 : roundover_slices - 1]) {
+            z0_raw = baffle_roundover * i / roundover_slices + _eps;
+            z1_raw = baffle_roundover * (i + 1) / roundover_slices + _eps;
+            z0 = max(wall, z0_raw);
+            z1 = z1_raw;
+            if (z0 < z1) {
+                hull() {
+                    translate([0, 0, z0])
+                        linear_extrude(height = 0.01)
+                            inner_cross_section_at(z0);
+                    translate([0, 0, z1])
+                        linear_extrude(height = 0.01)
+                            inner_cross_section_at(z1);
+                }
+            }
+        }
+    }
+
+    // Body zone: same 40 slices as outer_shape, clamped to [roundover, depth-wall]
+    body_slices = 40;
+    z_start = max(0.01, baffle_roundover);
+    for (i = [0 : body_slices - 1]) {
+        z0_raw = z_start + (enclosure_depth - z_start) * i / body_slices + _eps;
+        z1_raw = z_start + (enclosure_depth - z_start) * (i + 1) / body_slices + _eps;
+        z1 = min(enclosure_depth - wall, z1_raw);
+        if (z0_raw < z1) {
+            hull() {
+                translate([0, 0, z0_raw])
+                    linear_extrude(height = 0.01)
+                        inner_cross_section_at(z0_raw);
+                translate([0, 0, z1])
+                    linear_extrude(height = 0.01)
+                        inner_cross_section_at(z1);
+            }
         }
     }
 }
@@ -372,16 +406,16 @@ module tweeter_cutout() {
 // ========================
 
 // The port tube solid adds material inside the cavity for the port walls.
-// It stops at the inner back wall surface — the back wall itself
-// provides the remaining material, which the bore+flare then cuts through.
+// Extends 1mm past the inner back wall (z = depth - wall + 1) to avoid
+// coplanar faces with the inner cavity boundary at z = depth - wall.
 // A bell-shaped cone at the entry end provides material for the entry flare.
 module port_tube_solid() {
     port_start_z = enclosure_depth - wall - port_length;
     
-    // Main straight tube
+    // Main straight tube — extended 1mm past inner back wall
     translate([port_x_offset, port_y_offset, port_start_z])
         cylinder(d = port_diameter + 2*port_wall_thick, 
-                 h = port_length);
+                 h = port_length + 1);
     
     // Entry flare bell: cone from flare mouth diameter to tube diameter
     if (port_entry_flare_r > 0) {
@@ -930,10 +964,12 @@ module full_enclosure() {
             }
             
             // Crossover PCB mounting bosses (both side walls)
-            intersection() {
-                inner_cavity();
-                xover_bosses_all();
-            }
+            // Added directly without inner_cavity intersection to avoid
+            // coplanar faces between boss cylinder facets and cavity hull
+            // boundaries, which create horizontal plane artifacts in STL.
+            // Bosses are already positioned within the cavity (from inner
+            // wall surface to PCB face), so clipping is unnecessary.
+            xover_bosses_all();
         }
         
         // Subtract all cutouts

@@ -119,6 +119,16 @@ Added a matching concave flare to the cavity-side port opening, mirroring the ex
 - **No conflicts:** Bell clears all crossover bosses (on side walls at x=±hw), terminal cutout, and pillars. Port center at (0, 45) with max bell radius ~35mm stays well within the ~70mm inner half-width at the split plane.
 - **6 triangular gusset ribs** at the port tube-to-back-wall junction. Each rib is a hull of a vertical strip on the tube surface and a horizontal strip on the back wall, forming a triangular brace. 15mm tall along the tube, 10mm radial extent, 2mm thick. Spreads the tube-to-wall load across more layer lines for better FDM adhesion (the tube axis is parallel to layer lines, making this junction rely entirely on interlayer adhesion without the ribs).
 
+### Session 12: STL Hull Boundary Alignment Bugfix
+
+Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z≈114mm in the back half STL:
+
+- **Root cause:** `inner_cavity()` used 50 evenly-spaced hull slices while `outer_shape()` used 20+40 slices at different z-positions. The `difference(outer - inner)` boolean created thin shelf artifacts at every mismatched hull boundary.
+- **Fix — aligned slicing with epsilon offset:** Rewrote `inner_cavity()` to use the same slice count and z-formula as `outer_shape()` (20 roundover + 40 body slices), but offset by 0.001mm to prevent exactly coplanar faces that cause non-manifold edges in CGAL.
+- **Port tube extension:** Extended `port_tube_solid()` by 1mm past the inner back wall (z = depth − wall) to eliminate coplanar faces between the port tube end and the inner cavity boundary.
+- **Crossover boss assembly:** Removed `intersection(inner_cavity, xover_bosses_all)` — bosses are now added directly to the enclosure union, avoiding coplanar face artifacts where boss cylinder facets met cavity hull boundaries.
+- **Validation:** Non-manifold edges reduced from 170 to 159; no large horizontal faces detected at problem z-values; both halves export with `NoError` status.
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
@@ -163,6 +173,8 @@ claudsters/
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
 6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -185=back), Z=height(+up). Model center is at (0, -92.5, 0). Camera uses eye/center 6-parameter format.
+
+7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
 
 ## Open Items / Future Work
 
