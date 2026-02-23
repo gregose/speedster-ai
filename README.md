@@ -145,8 +145,9 @@ Change `enclosure_depth` (currently 185mm). The echo block reports estimated vol
 ### Binding Post Plate
 | Qty | Item | Spec |
 |-----|------|------|
-| 1 | Binding post plate | 100.6mm square (standard) |
-| 4 | Wood screws or self-tappers | Per plate spec |
+| 1 | Binding post plate | Dayton Audio SBPP-SI, 100.6mm square |
+| 4 | M4 heat-set inserts | Ø5.6mm × 6mm deep |
+| 4 | M4 flat head (countersunk) cap screws | 8mm length, 90° head |
 
 ### Drivers & Crossover
 | Qty | Item |
