@@ -8,15 +8,15 @@ This document verifies that the Claudsters v2 enclosure design is mechanically s
 
 **Carmody spec:** 5.5 liters (0.19 ft³)
 
-**Claudsters v2:** 5.49 liters (net, after subtracting port tube and pillar displacement)
+**Claudsters v2:** 5.46 liters (net, after subtracting port tube, entry flare bell, and pillar displacement)
 
 The volume is computed via Simpson's rule on the inner cavity cross-sections at the front wall (z=10mm), midpoint (z=92.5mm), and back wall (z=175mm). The taper formula interpolates between inner baffle dimensions (145×280mm) and inner back dimensions (98×220mm) using a power-2.0 curve.
 
 Breakdown:
-- Gross cavity volume: ~5.63 L
-- Port tube displacement: -0.12 L (39.925mm OD × 114.3mm)
+- Gross cavity volume: ~5.64 L
+- Port tube + entry bell displacement: -0.16 L (tube: 39.925mm OD × 114.3mm, bell: truncated cone 70→40mm OD × 15mm)
 - Pillar displacement: -0.02 L (estimated, 8 front + 8 back pillars)
-- **Net air volume: 5.49 L** (within 0.2% of target)
+- **Net air volume: 5.46 L** (within 0.7% of target)
 
 For final verification, export `inner_cavity()` as STL and measure volume in slicing software.
 
@@ -26,7 +26,7 @@ For final verification, export `inner_cavity()` as STL and measure volume in sli
 
 **Claudsters v2:** 34.925mm diameter × 114.3mm long (exact conversion of Carmody's imperial specs)
 
-The port dimensions are unchanged from the original design. The Helmholtz resonance frequency depends on port area, port length, and box volume — all three are matched. The 15mm concave exit flare adds effective port length of approximately 3-5mm (partial end correction), which would shift tuning down by ~1-2 Hz. This is well within Carmody's stated tolerance and the flare's turbulence reduction benefit outweighs this negligible shift.
+The port dimensions are unchanged from the original design. The Helmholtz resonance frequency depends on port area, port length, and box volume — all three are matched. Both port ends now have 15mm concave flares (entry and exit). Each flare modifies the end correction by approximately 3-5mm of effective port length. The combined effect may shift tuning down by ~2-3 Hz from the nominal 55 Hz. This is within Carmody's stated tolerance, and the flares' primary benefit — reduced air turbulence and chuffing noise at higher SPL — outweighs this minor shift.
 
 ### 1.3 Baffle Diffraction
 
@@ -168,10 +168,13 @@ The binding post plate is 100.6mm square, mounted at y=-45mm on the back face. T
 
 ### 3.3 Port Tube vs Inner Cavity
 
-- Port outer diameter: 34.925 + 2×2.5 = 39.925mm
+- Port outer diameter (straight section): 34.925 + 2×2.5 = 39.925mm
+- Port entry flare bell: max outer diameter = 34.925 + 2×15 + 2×2.5 = 69.925mm at z=60.7mm, tapering to 39.925mm at z=75.7mm
 - Port at (x=0, y=+45) from z=60.7 to z=175mm
-- Inner cavity width at z=60.7: ~143mm → port center to side wall: 71.5mm >> 20mm radius ✓
-- Inner cavity height at y=+45: port top edge at y=65mm, inner cavity top at ~138mm → 73mm clearance ✓
+- Inner cavity width at z=60.7: ~143mm → port center to side wall: 71.5mm >> 35mm bell radius ✓
+- Inner cavity height at y=+45: port top edge at y=80mm (bell mouth), inner cavity top at ~138mm → 58mm clearance ✓
+- Crossover bosses on side walls (x=±hw) do not intersect the centered port bell ✓
+- **Reinforcement ribs:** 6 triangular gusset ribs at the tube-to-back-wall junction (z=160–175mm). Each rib spans 15mm along the tube and 10mm radially beyond the tube surface, 2mm thick. Total rib volume: ~0.001L (negligible). Ribs are clipped to inner cavity via intersection(). ✓
 
 ### 3.4 Bolt Position vs Driver Cutout Clearance
 

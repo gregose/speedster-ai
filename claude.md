@@ -108,6 +108,17 @@ Established a CLI render pipeline for visual validation and documentation:
 - **`render.sh`**: Shell script generating all 7 renders in parallel (~1.5s each, `--preview` mode, 1920×1080).
 - **Key insight:** Previous camera angles were wrong because they didn't account for the coordinate transform. The front baffle is at Y=0 (negative Y camera position), back at Y=185 (positive Y).
 
+### Session 11: Port Entry Flare
+
+Added a matching concave flare to the cavity-side port opening, mirroring the existing exit flare:
+
+- **15mm radius quarter-circle entry flare** at the port tube front face (z = split_z). Smooth concave bell transitions from bore diameter (34.9mm) outward to 64.9mm at the mouth.
+- **Bell-shaped tube solid** provides material for the flare: truncated cone from flare mouth + wall thickness down to normal tube diameter over 15mm depth.
+- **Volume impact:** Entry bell displaces ~0.018L additional volume. Net air volume drops to 5.46L (0.7% below 5.5L target). Compensable with ~1mm depth increase if needed.
+- **Acoustic impact:** Entry flare modifies the port's flanged end correction, potentially lowering tuning frequency by ~2-3 Hz. The primary benefit is reduced air turbulence and chuffing noise at higher SPL.
+- **No conflicts:** Bell clears all crossover bosses (on side walls at x=±hw), terminal cutout, and pillars. Port center at (0, 45) with max bell radius ~35mm stays well within the ~70mm inner half-width at the split plane.
+- **6 triangular gusset ribs** at the port tube-to-back-wall junction. Each rib is a hull of a vertical strip on the tube surface and a horizontal strip on the back wall, forming a triangular brace. 15mm tall along the tube, 10mm radial extent, 2mm thick. Spreads the tube-to-wall load across more layer lines for better FDM adhesion (the tube axis is parallel to layer lines, making this junction rely entirely on interlayer adhesion without the ribs).
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
@@ -120,7 +131,9 @@ Established a CLI render pipeline for visual validation and documentation:
 | Roundover | 28 mm radius | Diffraction control > ~1950 Hz |
 | Split plane | z = 60.7 mm | Port tube stays in back half |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
-| Port flare | 15 mm concave radius | Reduced turbulence noise |
+| Port flare (exit) | 15 mm concave radius | Reduced turbulence at back face |
+| Port flare (entry) | 15 mm concave radius | Matching bell at cavity side |
+| Port ribs | 6× gussets, 15×10×2mm | Layer adhesion at back wall junction |
 | Pillar dia | 16 mm | 8 pairs at split-plane perimeter |
 | Back pillar | 30mm + 15° taper (30mm cone) | Wall blend + bolt coverage |
 | Bolt pattern | 8× M4, 12mm inset from edge | Split-plane perimeter |

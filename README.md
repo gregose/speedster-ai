@@ -8,7 +8,7 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 |------|-------------------|---------------|
 | Internal volume | 5.5 L | 5.49 L |
 | Port tuning | ~55 Hz | ~55 Hz (same port) |
-| Port | 1.375" dia × 4.5" long | 34.925mm × 114.3mm + 15mm exit flare |
+| Port | 1.375" dia × 4.5" long | 34.925mm × 114.3mm + 15mm entry/exit flares |
 | Woofer | Tang Band W4-1720 (surface) | Same (surface mount, M4 heat-set inserts) |
 | Tweeter | Fountek NeoCD1.0 (flush) | Same (flush recess, M3 heat-set inserts) |
 | Wall material | 1/2" MDF | 10mm PETG (5-6 perimeters) |
@@ -30,7 +30,7 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 **28mm front edge roundover** smooths the baffle-to-side transition with a circular profile, reducing diffraction effects above ~1950 Hz. The original MDF box had sharp baffle edges.
 
-**Port exit flare** with 15mm concave radius at the back face reduces turbulence noise at the port opening.
+**Port flares** with 15mm concave radius at both the back face (exit) and cavity side (entry) reduce turbulence noise and chuffing at the port openings. Six triangular gusset ribs reinforce the port tube-to-back-wall junction for reliable FDM layer adhesion.
 
 **Woofer rear chamfer** at 45° opens the baffle bore behind the driver, reducing back-wave reflections off the cutout edge.
 
