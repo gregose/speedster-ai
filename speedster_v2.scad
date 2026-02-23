@@ -121,14 +121,16 @@ tongue_clearance = 0.3;    // Gap per side for print tolerance (mm)
 seal_depth = 1;            // Extra groove depth below tongue for foam/TPU (mm)
 tongue_inset = 5;          // From outer wall to tongue center (mm)
 
-// --- Binding post plate ---
-// From mechanical drawing: square plate with corner screws
+// --- Binding post plate (Dayton Audio SBPP-SI) ---
+// From mechanical drawing: square plate with countersunk corner screws
 terminal_outer = 100.6;          // Overall plate size (mm, square)
 terminal_cutout = 76.5;          // Inner cutout that passes through wall (mm, square)
 terminal_cutout_r = 4;           // Inner cutout corner radius (R4)
 terminal_screw_spacing = 84.5;   // Screw hole spacing (mm, square pattern)
-terminal_screw_dia = 5.5;        // Screw hole diameter (mm)
-terminal_insert_depth = 3;       // Depth the plate lip inserts into wall (mm)
+terminal_screw_dia = 4.5;        // M4 clearance hole in plate (mm)
+terminal_insert_dia = 5.6;       // M4 heat-set insert hole diameter (mm)
+terminal_insert_depth = 6;       // Heat-set insert pocket depth (mm)
+terminal_recess_depth = 3;       // Depth the plate lip inserts into wall (mm)
 terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
 
 // --- Crossover PCB mounting ---
@@ -428,17 +430,19 @@ module terminal_cutout() {
                         terminal_cutout - 2*terminal_cutout_r], center = true);
         
         // Recess for plate flange (100.6 x 100.6mm, 3mm deep from outside)
-        translate([0, 0, wall + 1 - terminal_insert_depth])
-            linear_extrude(height = terminal_insert_depth + 1)
+        translate([0, 0, wall + 1 - terminal_recess_depth])
+            linear_extrude(height = terminal_recess_depth + 1)
                 offset(r = 7)  // R7 outer corners per drawing
                     square([terminal_outer - 14, terminal_outer - 14], center = true);
         
-        // 4x screw holes (84.5mm square pattern, Ø5.5mm)
+        // 4x M4 heat-set insert pockets (84.5mm square pattern)
+        // Bored from the recess floor inward (toward cavity)
         for (sx = [-1, 1])
             for (sy = [-1, 1])
                 translate([sx * terminal_screw_spacing/2,
-                           sy * terminal_screw_spacing/2, 0])
-                    cylinder(d = terminal_screw_dia, h = wall + 2);
+                           sy * terminal_screw_spacing/2,
+                           wall + 1 - terminal_recess_depth - terminal_insert_depth])
+                    cylinder(d = terminal_insert_dia, h = terminal_insert_depth + 0.1);
     }
 }
 
@@ -1137,7 +1141,8 @@ echo("");
 //     8x M3 heat-set inserts (Ø4.5mm × 5mm deep) - side wall bosses (4 per side)
 //     8x M3 × 8mm socket head cap screws - through PCB holes (4 per board)
 //   Binding post plate:
-//     4x wood screws or self-tappers per plate spec
+//     4x M4 heat-set inserts (Ø5.6mm × 6mm deep) - back wall recess floor
+//     4x M4 flat head (countersunk) cap screws - through plate countersunk holes
 //
 // Pillar interlock system:
 //   8x 16mm dia pillar pairs (front + back) at split-plane perimeter

@@ -87,6 +87,14 @@ Improved the crossover PCB mounting bosses for overhang-free FDM printing:
 - **D-shaped boss cross-section:** Hulled each boss cylinder with a thin slab at `z = ez + boss_r` to create a flat-bottomed profile. This eliminates the crescent-shaped gaps between the round cylinder and the flat brace surface, giving a seamless transition from boss to support.
 - **Result:** Every layer of the crossover boss prints with ≤45° overhang — no support material needed for these features.
 
+### Session 9: Binding Plate Heat-Set Inserts
+
+Converted binding post plate mounting from through-hole self-tappers to heat-set inserts:
+
+- **4× M4 heat-set inserts** (Ø5.6mm × 6mm deep) pressed into the recess floor on the back face, same spec as the woofer mounting inserts.
+- **Insert pockets bored from recess floor inward** (toward cavity). Total depth used: 3mm recess + 6mm insert = 9mm of the 10mm wall, leaving 1mm of material on the cavity side.
+- **Rationale:** Self-tapping screws into PETG wear out quickly with repeated assembly. Heat-set inserts allow unlimited disassembly for crossover tuning and driver swaps, consistent with the rest of the enclosure's insert-based design.
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |

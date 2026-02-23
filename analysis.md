@@ -140,8 +140,11 @@ All heat-set inserts have adequate wall material surrounding them:
 | Enclosure M4 | 5.6mm | 8mm | 16mm pillar | 2.86× |
 | Woofer M4 | 5.6mm | 6mm | 10mm wall | 1.79× |
 | Tweeter M3 | 4.5mm | 5mm | 10mm wall | 2.22× |
+| Terminal M4 | 5.6mm | 6mm | 10mm wall | 1.79× |
 
-A minimum wall ratio of 1.5× insert diameter is recommended for PETG; all three exceed this.
+A minimum wall ratio of 1.5× insert diameter is recommended for PETG; all four exceed this.
+
+**Terminal insert depth check:** The recess is 3mm deep from the back exterior. Inserts are 6mm deep from the recess floor, for a total of 9mm into the 10mm wall. This leaves 1mm of solid PETG on the cavity side — sufficient to prevent punch-through during insert installation. The insert pockets do not intersect the terminal through-cutout (76.5mm square) because the screw pattern (84.5mm spacing) places each insert center 4mm outside the cutout edge. ✓
 
 ## 3. Dimensional Verification
 
