@@ -61,7 +61,14 @@ port_length = 114.3;      // 4.5 inches in mm
 port_wall_thick = 2.5;    // Port tube wall thickness
 port_x_offset = 0;        // Centered horizontally
 port_y_offset = 45;       // Behind tweeter area (positive = upper)
-port_flare_r = 15;        // Radius of smooth flare at port exit (mm)
+port_flare_r = 15;        // Radius of smooth flare at port exit (back face, mm)
+port_entry_flare_r = 15;  // Radius of smooth flare at port entry (cavity side, mm)
+
+// Port reinforcement ribs at back wall junction
+port_rib_count = 6;        // Number of gusset ribs around port circumference
+port_rib_height = 15;      // Rib extent along port tube from back wall (mm)
+port_rib_extent = 10;      // Radial extent beyond port tube outer surface (mm)
+port_rib_thick = 2;        // Rib thickness in circumferential direction (mm)
 
 // --- Split plane ---
 // Split aligned with front end of port tube so port stays 
@@ -367,23 +374,58 @@ module tweeter_cutout() {
 // The port tube solid adds material inside the cavity for the port walls.
 // It stops at the inner back wall surface — the back wall itself
 // provides the remaining material, which the bore+flare then cuts through.
+// A bell-shaped cone at the entry end provides material for the entry flare.
 module port_tube_solid() {
-    translate([port_x_offset, port_y_offset, enclosure_depth - wall - port_length])
+    port_start_z = enclosure_depth - wall - port_length;
+    
+    // Main straight tube
+    translate([port_x_offset, port_y_offset, port_start_z])
         cylinder(d = port_diameter + 2*port_wall_thick, 
                  h = port_length);
+    
+    // Entry flare bell: cone from flare mouth diameter to tube diameter
+    if (port_entry_flare_r > 0) {
+        translate([port_x_offset, port_y_offset, port_start_z])
+            cylinder(d1 = port_diameter + 2*port_entry_flare_r + 2*port_wall_thick,
+                     d2 = port_diameter + 2*port_wall_thick,
+                     h = port_entry_flare_r);
+    }
 }
 
-// Unified port bore + flare as a single solid of revolution.
+// Triangular gusset ribs reinforcing the port tube at the back wall.
+// Each rib is a hull of two thin strips: one along the tube outer
+// surface (axial) and one along the inner back wall (radial).
+// This spreads the tube-to-wall load across more layer lines.
+module port_ribs() {
+    port_end_z = enclosure_depth - wall;  // inner back wall surface
+    tube_outer_r = (port_diameter + 2*port_wall_thick) / 2;
+    
+    translate([port_x_offset, port_y_offset, 0])
+    for (i = [0:port_rib_count-1]) {
+        rotate([0, 0, i * 360/port_rib_count])
+        hull() {
+            // Vertical strip on port tube outer surface
+            translate([tube_outer_r - 0.5, -port_rib_thick/2,
+                       port_end_z - port_rib_height])
+                cube([1, port_rib_thick, port_rib_height]);
+            // Horizontal strip on inner back wall
+            translate([tube_outer_r, -port_rib_thick/2,
+                       port_end_z - 1])
+                cube([port_rib_extent, port_rib_thick, 1]);
+        }
+    }
+}
+
+// Unified port bore + flares as a single solid of revolution.
 // 2D profile in the r-z plane (r = radial distance from port axis):
-//   - Straight bore wall (r = port_diameter/2) from port entrance 
-//     up to where the flare begins
-//   - Quarter-circle flare from bore wall outward to the back face
-//   - Extends past back face to ensure clean through-cut
+//   - Entry flare: quarter-circle from bore wall outward at the cavity face
+//   - Straight bore wall (r = port_diameter/2) between flares
+//   - Exit flare: quarter-circle from bore wall outward at the back face
 // This is subtracted from the enclosure in one operation.
 module port_bore() {
     // Z coordinates (absolute, along enclosure depth axis)
     port_start_z = enclosure_depth - wall - port_length;
-    flare_start_z = enclosure_depth - port_flare_r;  // where curve begins
+    flare_start_z = enclosure_depth - port_flare_r;  // exit flare begins
     back_face_z = enclosure_depth;
     
     bore_r = port_diameter / 2;
@@ -393,15 +435,28 @@ module port_bore() {
             // Build the 2D bore+flare profile as a union of shapes
             // All in the positive-r half-plane (required by rotate_extrude)
             
-            // 1. Straight bore: rectangle from port entrance to flare start
+            // 1. Straight bore: rectangle from port entrance to exit flare start
             //    Width = bore radius, positioned at r=0 to r=bore_r
             translate([0, port_start_z - 1])
                 square([bore_r, flare_start_z - port_start_z + 1]);
             
-            // 2. Quarter-circle flare zone: 
-            //    Square minus circle gives us the flare cutout
-            //    The square covers from r=0 to r=bore_r+flare_r
-            //    and from z=flare_start_z to z=back_face_z+1
+            // 2. Entry flare (cavity-side bell):
+            //    Quarter-circle concave curve from bore_r + entry_flare_r
+            //    at the port mouth (z=port_start_z) down to bore_r at
+            //    z = port_start_z + entry_flare_r (where straight bore begins)
+            if (port_entry_flare_r > 0) {
+                translate([0, port_start_z - 1])
+                    difference() {
+                        square([bore_r + port_entry_flare_r,
+                                port_entry_flare_r + 1]);
+                        translate([bore_r + port_entry_flare_r,
+                                   port_entry_flare_r + 1])
+                            circle(r = port_entry_flare_r, $fn = 60);
+                    }
+            }
+            
+            // 3. Exit flare (back-face bell):
+            //    Quarter-circle from bore wall outward to the back face
             translate([0, flare_start_z])
                 difference() {
                     square([bore_r + port_flare_r, port_flare_r + 1]);
@@ -856,6 +911,12 @@ module full_enclosure() {
                 port_tube_solid();
             }
             
+            // Port reinforcement ribs at back wall junction
+            intersection() {
+                inner_cavity();
+                port_ribs();
+            }
+            
             // Front pillar bosses (inside front half)
             intersection() {
                 inner_cavity();
@@ -1032,10 +1093,17 @@ _cavity_length = enclosure_depth - 2*wall;
 _vol_mm3 = (_cavity_length / 6) * (_A_front + 4*_A_mid + _A_back);
 _vol_liters = _vol_mm3 / 1e6;
 
-// Port tube displacement
+// Port tube displacement (straight tube + entry flare bell cone)
 _port_outer_dia = port_diameter + 2*port_wall_thick;
 _port_vol_mm3 = PI/4 * pow(_port_outer_dia, 2) * port_length;
-_port_vol_liters = _port_vol_mm3 / 1e6;
+// Entry flare bell: truncated cone from flare mouth to tube diameter
+_bell_mouth_dia = port_diameter + 2*port_entry_flare_r + 2*port_wall_thick;
+_bell_r1 = _bell_mouth_dia / 2;
+_bell_r2 = _port_outer_dia / 2;
+_bell_vol_mm3 = PI/3 * port_entry_flare_r * (_bell_r1*_bell_r1 + _bell_r2*_bell_r2 + _bell_r1*_bell_r2)
+              - PI/4 * pow(_port_outer_dia, 2) * port_entry_flare_r;  // subtract overlap with main tube
+_port_total_vol_mm3 = _port_vol_mm3 + _bell_vol_mm3;
+_port_vol_liters = _port_total_vol_mm3 / 1e6;
 
 // Pillar displacement (approximate - 8 front + 8 back pillars)
 _pillar_vol_liters = 0.02;  // Rough estimate for pillar pairs
