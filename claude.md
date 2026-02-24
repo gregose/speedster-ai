@@ -40,7 +40,7 @@ Major refinements:
 **File:** `2026-02-20-02-45-11-speedster-3d-driver-heat-inserts.txt`
 
 Converted all driver mounting from through-holes to heat-set inserts:
-- **Woofer:** 4× M4 heat-set inserts (Ø5.6mm × 6mm deep) in baffle face, 45° rotated diamond pattern on 115mm bolt circle
+- **Woofer:** 4× M4 heat-set inserts (Ø5.6mm × 8mm deep) in baffle face, 45° rotated diamond pattern on 115mm bolt circle
 - **Tweeter:** 4× M3 heat-set inserts (Ø4.5mm × 5mm deep) in recess floor, 60.8mm square pattern
 
 This allows repeated assembly/disassembly without wearing out the plastic threads.
@@ -144,19 +144,36 @@ Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z�
 - **Crossover boss assembly:** Removed `intersection(inner_cavity, xover_bosses_all)` — bosses are now added directly to the enclosure union, avoiding coplanar face artifacts where boss cylinder facets met cavity hull boundaries.
 - **Validation:** Non-manifold edges reduced from 170 to 159; no large horizontal faces detected at problem z-values; both halves export with `NoError` status.
 
+### Session 14: Crossover Clearance — Deeper Enclosure + Height Reduction
+
+Resolved crossover-to-woofer collision found during test prints:
+
+- **Problem:** Crossover PCBs mounted on side walls (z=62–154) collided with woofer motor assembly extending 82mm from baffle. Components protruding inward hit the woofer magnet (90mm dia) in the z=62–82 overlap zone.
+- **Enclosure depth extended:** 174mm → 185mm (+11mm). Pushes the inner back wall from z=164 to z=175, allowing the 92mm PCB to start at z=83 (just clearing the woofer at z=82) with back edge flush at z=175.
+- **Height reduced to maintain volume:** Baffle height 300→281mm, back height 240→225mm (proportional 0.8 ratio preserved). Net volume: 5.498L (target 5.5L, −0.002L error).
+- **Driver fit verified:** Woofer flange bottom at y=−107.8 has 8.8mm clearance on flat baffle face (was 18.2mm). Tweeter top at y=80.2 has 36.2mm clearance. Both fit comfortably.
+- **Crossover repositioned:** `xover_z_start` 62→83mm. PCB z range 83–175mm clears woofer entirely.
+- **PCBs rotated 180° in-plane:** Both boards flipped top-to-bottom and left-to-right so components clear binding post hardware. `xover_hole_enc()` applies pcb_y flip (`pcb_h - hole_y`) for both walls, pcb_x flip for right wall mirror.
+- **Corner-aware boss positioning:** Added `inner_corner_r_at(z)`, `inner_wall_x_at(z,y)`, and `min_wall_x_in_boss(z,y)` functions. These account for internal corner rounding when computing boss depth and PCB face position, preventing bosses from protruding through curved walls.
+- **Hole [87,5] removed:** Falls in back-bottom corner rounding zone where wall_x < face_abs. 3 holes per board: [43,5], [87,121], [5,121].
+- **`xover_y_top` tuned to 26:** Positions the inductor (50mm barrel at PCB coord 63,102) to clear the port tube (y=45, R=20) by 3.0mm circle-to-circle gap. PCB top at y=26 is 1mm above port bottom — 38mm-tall components clear with 2.1mm margin. Bottom at y=−100 clears corner rounding (3.2mm gap at tightest point z=163).
+- **Tolerance updates from test prints:** M4 heat-set insert Ø5.5→5.6mm, M3 heat-set insert Ø4.4→4.5mm, M4 through-hole Ø4.3→4.5mm.
+- **Diffraction impact:** Height-based baffle step shifts from ~573Hz to ~612Hz — negligible since it's dominated by the narrower width dimension (~608Hz). Roundover effectiveness unchanged.
+- **Split plane auto-adjusts:** split_z = 185−10−114.3 = 60.7mm (was 49.7mm). Still well past the 39mm roundover zone.
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Baffle | 180 × 300 mm | Widened for woofer flange clearance on flat face |
-| Back | 118 × 240 mm, R42 corners | Terminal plate clearance |
-| Depth | 174 mm | Tuned for 5.51L net volume |
+| Baffle | 180 × 281 mm | Width for woofer flange; height reduced for volume with deeper enclosure |
+| Back | 118 × 225 mm, R42 corners | Terminal plate clearance; proportional height reduction |
+| Depth | 185 mm | Extended for crossover clearance behind woofer |
 | Wall | 10 mm PETG | Stiffness parity with 1/2" MDF |
 | Taper | Power 2.0 (quadratic) | Volume concentration near baffle |
 | Roundover inset | 24 mm | Diffraction control > ~2281 Hz |
 | Roundover depth | 39 mm | Extended for ≤45° FDM overhang |
 | Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
-| Split plane | z = 49.7 mm | Port tube stays in back half |
+| Split plane | z = 60.7 mm | Port tube stays in back half (auto-computed) |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
 | Port flare (exit) | 15 mm concave radius | Reduced turbulence at back face |
 | Port flare (entry) | 15 mm concave radius | Matching bell at cavity side |
@@ -168,6 +185,13 @@ Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z�
 | Tongue | 3mm wide × 4mm tall | Self-aligning seal joint |
 | Groove | 3.6mm wide × 5mm deep | 0.3mm clearance + 1mm seal depth |
 | Interlock | 10mm dia × 2mm boss/recess | Boss on back, recess on front |
+| Crossover PCB | 92 × 126 mm, 3 holes per board | Holes: [43,5], [87,121], [5,121] |
+| Crossover z_start | 83 mm | Clears woofer depth (82mm from baffle) |
+| Crossover y_top | 26 mm | Inductor clears port by 3mm; 38mm components clear |
+| Crossover face | ±46.3 mm from center | Corner-aware envelope positioning |
+| M4 heat-set insert | Ø5.6mm × 8mm deep | Woofer, pillars, terminal plate |
+| M3 heat-set insert | Ø4.5mm × 6mm deep | Tweeter, crossover bosses |
+| M4 through-hole | Ø4.5mm | Bolt clearance holes |
 
 ## File Structure
 

@@ -32,7 +32,7 @@ wall = 10;                // PETG wall thickness (mm)
 
 // --- Baffle (front face) dimensions ---
 baffle_width = 180;       // External width at front (mm) - widened for woofer flange clearance
-baffle_height = 300;      // External height (mm) - taller for volume
+baffle_height = 281;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
 baffle_corner_r = 15;     // Corner rounding on front face
 
 // --- Front edge roundover ---
@@ -46,11 +46,11 @@ baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softe
 // --- Back dimensions ---
 // NOTE: back_width must be >= terminal_outer + 15mm for binding plate to fit
 back_width = 118;         // External width at rear (mm) - sized for binding plate
-back_height = 240;        // External height at rear (mm)
+back_height = 225;        // External height at rear (mm) - proportional to baffle reduction
 back_corner_r = 42;       // Generous rounding on back
 
 // --- Depth ---
-enclosure_depth = 174;    // Total external depth (mm) - TUNED for 5.5L
+enclosure_depth = 185;    // Total external depth (mm) - extended for crossover clearance behind woofer
 
 // --- Taper curve ---
 // Controls the shape of the wedge taper
@@ -94,7 +94,7 @@ woofer_total_depth = 89;         // Total depth behind baffle (mm)
 woofer_magnet_dia = 90;          // Magnet diameter for clearance (mm)
 woofer_y_offset = -45;           // Below center
 // M4 heat-set inserts for woofer mounting
-woofer_insert_dia = 5.5;         // M4 heat-set insert hole diameter
+woofer_insert_dia = 5.6;         // M4 heat-set insert hole diameter
 woofer_insert_depth = 8;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // Fountek NeoCD1.0 (flush mounted, ROUND faceplate)
@@ -111,12 +111,12 @@ tweeter_rear_width = 55;          // Rear body width (mm)
 tweeter_mount_depth = 70;         // Total depth behind baffle (66 + 4mm faceplate)
 tweeter_y_offset = 55;            // Above center
 // M3 heat-set inserts for tweeter mounting
-tweeter_insert_dia = 4.4;         // M3 heat-set insert hole diameter
+tweeter_insert_dia = 4.5;         // M3 heat-set insert hole diameter
 tweeter_insert_depth = 6;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // --- Assembly hardware ---
-bolt_dia = 4.3;           // M4 through-hole diameter — +0.3mm tolerance for FDM
-insert_dia = 5.5;         // M4 heat-set insert hole
+bolt_dia = 4.5;           // M4 through-hole diameter — +0.5mm tolerance for FDM
+insert_dia = 5.6;         // M4 heat-set insert hole
 insert_depth = 8;          // Insert pocket depth
 bolt_landing_dia = 8;      // Counterbore/landing diameter for bolt head
 bolt_inset = 12;           // Distance from edge to bolt center
@@ -137,7 +137,7 @@ terminal_cutout = 76.5;          // Inner cutout that passes through wall (mm, s
 terminal_cutout_r = 4;           // Inner cutout corner radius (R4)
 terminal_screw_spacing = 84.5;   // Screw hole spacing (mm, square pattern)
 terminal_screw_dia = 4.5;        // M4 clearance hole in plate (mm)
-terminal_insert_dia = 5.5;       // M4 heat-set insert hole diameter (mm)
+terminal_insert_dia = 5.6;       // M4 heat-set insert hole diameter (mm)
 terminal_insert_depth = 8;       // Heat-set insert pocket depth (mm) — extra depth to avoid bottoming out
 terminal_recess_depth = 3;       // Depth the plate lip inserts into wall (mm)
 terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
@@ -154,23 +154,24 @@ xover_comp_height_tall = 50;     // Tallest inductor height (mm)
 xover_tall_pcb_y = 80;           // Tall inductor Y position on PCB (from top=0)
 
 // Mounting hole positions on PCB (from top-left corner as 0,0):
-//   (43,5), (87,5), (87,121), (5,121)
+//   (43,5), (87,121), (5,121) — 3 holes per board
+//   Hole (87,5) omitted: falls in back-bottom corner rounding zone
 // Hole diameter: 3.3mm (accepts M3 screws)
-xover_holes = [[43,5], [87,5], [87,121], [5,121]];
+xover_holes = [[43,5], [87,121], [5,121]];
 xover_hole_dia = 3.3;
 
 // Mounting boss parameters
 xover_boss_dia = 10;             // Boss pad diameter (mm)
-xover_insert_dia = 4.4;          // M3 heat-set insert hole diameter
+xover_insert_dia = 4.5;          // M3 heat-set insert hole diameter
 xover_insert_depth = 6;          // Insert pocket depth (mm) — extra depth to avoid bottoming out
 xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 
 // PCB placement in enclosure coordinates
 // PCB long axis (126mm) runs vertically (Y), short axis (92mm) along Z
-// Board top at y=19, bottom at y=-107
-// Z from 62 to 154 (just past split plane to ~20mm before binding posts)
-xover_y_top = 19;                // Enclosure Y of PCB top edge
-xover_z_start = 62;              // Enclosure Z of PCB front edge (past split)
+// Board top at y=35, bottom at y=-91 (shifted up to clear back corner rounding)
+// Z from 83 to 175 (clears woofer depth, flush with inner back wall)
+xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by 3mm)
+xover_z_start = 83;              // Enclosure Z of PCB front edge (clears woofer)
 
 // Binding post dimensions (Dayton BPP-SN)
 // Side-by-side posts at x=±9.5mm from terminal center (y=-45)
@@ -816,38 +817,90 @@ function inner_half_h_at(z) =
         h_outer = baffle_height * (1 - tc) + back_height * tc
     ) (h_outer - 2 * wall) / 2;
 
+// Helper: compute inner corner radius at a given z depth
+function inner_corner_r_at(z) =
+    let(
+        t = z / enclosure_depth,
+        tc = pow(t, taper_power),
+        r_outer = baffle_corner_r * (1 - tc) + back_corner_r * tc
+    ) max(0, r_outer - wall);
+
+// Helper: actual inner wall x-position at (z, y), accounting for corner rounding.
+// In the flat wall zone, returns inner_half_w_at(z).
+// In the corner zone, returns the reduced x from the rounded corner arc.
+function inner_wall_x_at(z, y) =
+    let(
+        ihw = inner_half_w_at(z),
+        ihh = inner_half_h_at(z),
+        icr = inner_corner_r_at(z),
+        abs_y = abs(y),
+        corner_y = ihh - icr
+    ) (abs_y <= corner_y) ? ihw
+      : (abs_y >= ihh) ? ihw - icr
+      : let(dy = abs_y - corner_y,
+            dx = sqrt(max(0, icr * icr - dy * dy)))
+        (ihw - icr) + dx;
+
+// Helper: minimum inner wall x within the boss cylinder envelope at (z, y).
+// Samples the 4 cardinal points of the boss cylinder (±boss_r in Y and Z)
+// plus the center, returning the minimum. This ensures the boss cylinder
+// doesn't protrude past the wall at any point along its perimeter.
+function min_wall_x_in_boss(z, y) =
+    let(
+        br = xover_boss_dia / 2,
+        samples = [
+            inner_wall_x_at(z, y),
+            inner_wall_x_at(z + br, y),
+            inner_wall_x_at(z - br, y),
+            inner_wall_x_at(z, y + br),
+            inner_wall_x_at(z, y - br),
+            inner_wall_x_at(z + br * 0.707, y + br * 0.707),
+            inner_wall_x_at(z + br * 0.707, y - br * 0.707),
+            inner_wall_x_at(z - br * 0.707, y + br * 0.707),
+            inner_wall_x_at(z - br * 0.707, y - br * 0.707)
+        ]
+    ) min(samples);
+
 // Convert PCB hole coordinates to enclosure coordinates.
-// sign: -1 for left wall (normal orientation), +1 for right wall (flipped)
+// sign: -1 for left wall, +1 for right wall
 //
-// Left wall:  components face +x (inward). PCB mounted as-is.
-//   PCB top-left (0,0) is at enclosure (z_start, y_top).
+// Both PCBs are rotated 180° in-plane (flipped top-to-bottom and
+// left-to-right) so components clear the binding post hardware.
 //
-// Right wall: components face -x (inward). PCB rotated 180° around its
-//   vertical axis so the component side faces the opposite direction.
-//   This flips the x-coordinate: pcb_x → (pcb_width - pcb_x).
-//   The y-coordinate is unchanged.
+// Left wall:  components face +x (inward). PCB bottom-right (W,H)
+//   maps to enclosure (z_start, y_top).
+//
+// Right wall: components face -x (inward). Additionally mirrored
+//   around the vertical axis (flipping pcb_x) so the component side
+//   faces inward.
 //
 // Returns [enc_z, enc_y]
 function xover_hole_enc(hole, sign) = 
     let(
-        // Left wall (sign<0): PCB flipped so components face +x (inward)
-        // Right wall (sign>0): PCB normal so components face -x (inward)
-        pcb_x = (sign < 0) ? (xover_pcb_width - hole[0]) : hole[0],
-        pcb_y = hole[1]
+        // 180° in-plane rotation: flip both pcb_x and pcb_y
+        // Then left wall (sign<0) uses pcb_x as-is, right wall flips for mirror
+        pcb_x = (sign < 0) ? hole[0] : (xover_pcb_width - hole[0]),
+        pcb_y = xover_pcb_height - hole[1]
     )
     [xover_z_start + pcb_x, xover_y_top - pcb_y];
 
 // Find the PCB face x-position magnitude.
-// Uses the narrowest inner half-width across all hole z-positions
+// Uses the narrowest envelope-aware wall x across all hole positions
 // for BOTH orientations, minus minimum boss depth.
-// Returns a POSITIVE value; actual face_x is ±this value per side.
+// Returns a POSITIVE value; actual face_x is ±this value.
 function xover_pcb_face_x_abs() =
     let(
-        // Left wall uses flipped pcb_x, right wall uses normal pcb_x
-        left_hws = [for (h = xover_holes) inner_half_w_at(xover_z_start + (xover_pcb_width - h[0]))],
-        right_hws = [for (h = xover_holes) inner_half_w_at(xover_z_start + h[0])],
-        min_hw = min([each left_hws, each right_hws])
-    ) min_hw - xover_boss_min_depth;
+        // Compute minimum wall x within boss envelope at each hole
+        left_wxs = [for (h = xover_holes)
+            let(ez = xover_z_start + h[0],
+                ey = xover_y_top - (xover_pcb_height - h[1]))
+            min_wall_x_in_boss(ez, ey)],
+        right_wxs = [for (h = xover_holes)
+            let(ez = xover_z_start + (xover_pcb_width - h[0]),
+                ey = xover_y_top - (xover_pcb_height - h[1]))
+            min_wall_x_in_boss(ez, ey)],
+        min_wx = min([each left_wxs, each right_wxs])
+    ) min_wx - xover_boss_min_depth;
 
 // Crossover mounting bosses for ONE side wall.
 // Each boss is a cylinder extending from the curved inner wall surface
@@ -867,50 +920,56 @@ module xover_bosses(sign) {
         enc = xover_hole_enc(h, sign);
         ez = enc[0];  // enclosure z
         ey = enc[1];  // enclosure y
-        hw = inner_half_w_at(ez);  // inner half-width at this z
+        // Use envelope-aware wall position (min x within boss cylinder)
+        hw = min_wall_x_in_boss(ez, ey);
         
-        // Boss spans from wall inner surface to PCB face
+        // Boss spans from actual wall inner surface to PCB face
         boss_len = hw - face_abs;
         
-        // Brace extends in +Z direction from the bottom of the boss
-        // (ez + boss_dia/2) so the full cylinder is supported at 45°
-        boss_r = xover_boss_dia / 2;
-        brace_h = min(boss_len, (enclosure_depth - wall) - (ez + boss_r) - 0.5);
-        
-        if (sign < 0) {
-            // Left wall: wall at x=-hw, face at x=-face_abs
-            // Boss: cylinder hulled with flat slab at bottom so edges
-            // meet the brace surface flush (no crescent gaps)
-            hull() {
-                translate([-hw, ey, ez])
-                    rotate([0, 90, 0])
-                        cylinder(d = xover_boss_dia, h = boss_len);
-                translate([-hw, ey - boss_r, ez + boss_r])
-                    cube([boss_len, xover_boss_dia, 0.01]);
-            }
-            // 45° brace from bottom of boss (+Z direction, toward back wall)
-            hull() {
-                translate([-hw, ey - boss_r, ez + boss_r])
-                    cube([0.01, xover_boss_dia, brace_h]);
-                translate([-face_abs - 0.01, ey - boss_r, ez + boss_r])
-                    cube([0.01, xover_boss_dia, 0.01]);
-            }
-        } else {
-            // Right wall: wall at x=+hw, face at x=+face_abs
-            // Boss: cylinder hulled with flat slab at bottom
-            hull() {
-                translate([face_abs, ey, ez])
-                    rotate([0, 90, 0])
-                        cylinder(d = xover_boss_dia, h = boss_len);
-                translate([face_abs, ey - boss_r, ez + boss_r])
-                    cube([boss_len, xover_boss_dia, 0.01]);
-            }
-            // 45° brace from bottom of boss (+Z direction, toward back wall)
-            hull() {
-                translate([hw - 0.01, ey - boss_r, ez + boss_r])
-                    cube([0.01, xover_boss_dia, brace_h]);
-                translate([face_abs, ey - boss_r, ez + boss_r])
-                    cube([0.01, xover_boss_dia, 0.01]);
+        if (boss_len > 1) {  // skip if boss doesn't fit
+            // Brace extends in +Z direction from the bottom of the boss
+            // (ez + boss_dia/2) so the full cylinder is supported at 45°
+            boss_r = xover_boss_dia / 2;
+            brace_avail = (enclosure_depth - wall) - (ez + boss_r) - 0.5;
+            brace_h = min(boss_len, brace_avail);
+            
+            // Clamp D-flat position to not exceed back inner wall
+            flat_z = min(ez + boss_r, enclosure_depth - wall - 0.01);
+            
+            if (sign < 0) {
+                // Left wall: wall at x=-hw, face at x=-face_abs
+                hull() {
+                    translate([-hw, ey, ez])
+                        rotate([0, 90, 0])
+                            cylinder(d = xover_boss_dia, h = boss_len);
+                    translate([-hw, ey - boss_r, flat_z])
+                        cube([boss_len, xover_boss_dia, 0.01]);
+                }
+                if (brace_h > 0.5) {
+                    hull() {
+                        translate([-hw, ey - boss_r, flat_z])
+                            cube([0.01, xover_boss_dia, brace_h]);
+                        translate([-face_abs - 0.01, ey - boss_r, flat_z])
+                            cube([0.01, xover_boss_dia, 0.01]);
+                    }
+                }
+            } else {
+                // Right wall: wall at x=+hw, face at x=+face_abs
+                hull() {
+                    translate([face_abs, ey, ez])
+                        rotate([0, 90, 0])
+                            cylinder(d = xover_boss_dia, h = boss_len);
+                    translate([face_abs, ey - boss_r, flat_z])
+                        cube([boss_len, xover_boss_dia, 0.01]);
+                }
+                if (brace_h > 0.5) {
+                    hull() {
+                        translate([hw - 0.01, ey - boss_r, flat_z])
+                            cube([0.01, xover_boss_dia, brace_h]);
+                        translate([face_abs, ey - boss_r, flat_z])
+                            cube([0.01, xover_boss_dia, 0.01]);
+                    }
+                }
             }
         }
     }
@@ -919,6 +978,7 @@ module xover_bosses(sign) {
 // Heat-set insert pockets in crossover bosses.
 // Pocket is bored into the PCB-facing end of each boss.
 // The pocket goes INTO the boss from the flat face toward the wall.
+// Skips holes where the boss was too short to create.
 module xover_insert_pockets(sign) {
     face_abs = xover_pcb_face_x_abs();
     
@@ -926,19 +986,19 @@ module xover_insert_pockets(sign) {
         enc = xover_hole_enc(h, sign);
         ez = enc[0];
         ey = enc[1];
+        hw = min_wall_x_in_boss(ez, ey);
+        boss_len = hw - face_abs;
         
-        if (sign < 0) {
-            // Left wall: PCB face at x=-face_abs
-            // Bore in -x direction (toward wall at -hw)
-            translate([-face_abs, ey, ez])
-                rotate([0, -90, 0])
-                    cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
-        } else {
-            // Right wall: PCB face at x=+face_abs
-            // Bore in +x direction (toward wall at +hw)
-            translate([face_abs, ey, ez])
-                rotate([0, 90, 0])
-                    cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
+        if (boss_len > 1) {  // only bore if boss exists
+            if (sign < 0) {
+                translate([-face_abs, ey, ez])
+                    rotate([0, -90, 0])
+                        cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
+            } else {
+                translate([face_abs, ey, ez])
+                    rotate([0, 90, 0])
+                        cylinder(d = xover_insert_dia, h = xover_insert_depth + 0.1);
+            }
         }
     }
 }

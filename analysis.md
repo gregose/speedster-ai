@@ -58,7 +58,7 @@ The W4-1720 requires 89mm of depth behind the baffle. The internal cavity at the
 
 ### 1.6 Port Placement
 
-Carmody specifies the port "directly behind the tweeter." In SpeedsterAI, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=49.7mm to z=164mm, entirely within the back half.
+Carmody specifies the port "directly behind the tweeter." In SpeedsterAI, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=60.7mm to z=175mm, entirely within the back half.
 
 ## 2. Mechanical Feasibility
 
@@ -74,7 +74,7 @@ Carmody's original design specifies "no bracing" with 1/2" MDF. The SpeedsterAI 
 
 ### 2.2 Split-Plane Joint Integrity
 
-The split at z=49.7mm divides the enclosure into a shallow front half (baffle + 39.7mm of cavity) and a deep back half (port, terminal, 114.3mm of cavity).
+The split at z=60.7mm divides the enclosure into a shallow front half (baffle + 50.7mm of cavity) and a deep back half (port, terminal, 114.3mm of cavity).
 
 Three mechanisms ensure joint integrity:
 1. **Tongue-and-groove:** 3mm tongue / 3.6mm groove provides X-Y alignment and prevents lateral shift during assembly
@@ -99,12 +99,12 @@ All 8 bolts use the same landing z (~113mm), determined by the most restrictive 
 **Verification of the most restrictive bolt:**
 - Top center bolt position: (0, 134.8) at the split plane
 - At z=113mm: cross-section half-height = 134.8 + 4.0 = 138.8mm → actual half-height at z=113 ≈ 138.8mm ✓
-- Landing depth from back face: 174 - 113 = 61mm of material for the counterbore cut
+- Landing depth from back face: 185 - 113 = 72mm of material for the counterbore cut
 - Wall thickness at landing: ~10mm (the bolt sits in the wall zone)
 
 ### 2.4 Pillar Dimensions
 
-**Front pillars:** 16mm diameter × 39.7mm long (from inner baffle at z=10mm to split plane at z=49.7mm). Solid cylinders providing material for the M4 heat-set insert (Ø5.6mm × 8mm deep pocket at split face).
+**Front pillars:** 16mm diameter × 50.7mm long (from inner baffle at z=10mm to split plane at z=60.7mm). Solid cylinders providing material for the M4 heat-set insert (Ø5.6mm × 8mm deep pocket at split face).
 
 **Back pillars:** 16mm diameter × 30mm cylinder + 30mm taper (15° from vertical, transitioning from 16mm to 0mm). Total: 60mm from split plane. The gentler 15° angle (vs the original 20°) creates a more gradual blend with the inner wall and provides better coverage of the bolt through-hole.
 
@@ -150,7 +150,7 @@ A minimum wall ratio of 1.5× insert diameter is recommended for PETG; all four 
 
 ### 3.1 Terminal Plate Clearance
 
-The binding post plate is 100.6mm square, mounted at y=-45mm on the back face. The back face dimensions are 118×240mm with R30 corners (internal: 98×220mm).
+The binding post plate is 100.6mm square, mounted at y=-45mm on the back face. The back face dimensions are 118×225mm with R30 corners (internal: 98×205mm).
 
 - Horizontal clearance: (118 - 100.6) / 2 = 8.7mm per side ✓
 - Vertical clearance: plate center at y=-45, plate extends from y=-95.3 to y=+5.3. Back face extends from y=-120 to y=+120. Clearance to bottom edge: 120 - 95.3 = 24.7mm ✓
@@ -169,18 +169,18 @@ The binding post plate is 100.6mm square, mounted at y=-45mm on the back face. T
 ### 3.3 Port Tube vs Inner Cavity
 
 - Port outer diameter (straight section): 34.925 + 2×2.5 = 39.925mm
-- Port entry flare bell: max outer diameter = 34.925 + 2×15 + 2×2.5 = 69.925mm at z=49.7mm, tapering to 39.925mm at z=64.7mm
-- Port at (x=0, y=+45) from z=49.7 to z=164mm
-- Inner cavity width at z=49.7: ~157mm → port center to side wall: 78.5mm >> 35mm bell radius ✓
+- Port entry flare bell: max outer diameter = 34.925 + 2×15 + 2×2.5 = 69.925mm at z=60.7mm, tapering to 39.925mm at z=75.7mm
+- Port at (x=0, y=+45) from z=60.7 to z=175mm
+- Inner cavity width at z=60.7: ~157mm → port center to side wall: 78.5mm >> 35mm bell radius ✓
 - Inner cavity height at y=+45: port top edge at y=80mm (bell mouth), inner cavity top at ~138mm → 58mm clearance ✓
 - Crossover bosses on side walls (x=±hw) do not intersect the centered port bell ✓
 - **Reinforcement ribs:** 6 triangular gusset ribs at the tube-to-back-wall junction (z=149–164mm). Each rib spans 15mm along the tube and 10mm radially beyond the tube surface, 2mm thick. Total rib volume: ~0.001L (negligible). Ribs are clipped to inner cavity via intersection(). ✓
 
 ### 3.4 Bolt Position vs Driver Cutout Clearance
 
-The bolt pattern is computed from the cross-section at the split plane (z=49.7mm). At this depth, the cross-section is approximately 163×296mm. Bolt centers are 12mm inset from the edge.
+The bolt pattern is computed from the cross-section at the split plane (z=60.7mm). At this depth, the cross-section is approximately 163×277mm. Bolt centers are 12mm inset from the edge.
 
-The most critical clearance is between corner bolts and the woofer/tweeter cutouts. The woofer cutout at the split plane is a 95.5mm diameter bore (or wider due to the 45° chamfer starting at z=3mm — at z=49.7mm the bore has expanded well past the baffle). Since the woofer bore passes through the baffle (z=0 to z=10mm) and the split plane is at z=49.7mm, the woofer cutout does not intersect the split plane at all. The bolt positions at z=49.7 are in the wall zone, well outboard of the cavity. ✓
+The most critical clearance is between corner bolts and the woofer/tweeter cutouts. The woofer cutout at the split plane is a 95.5mm diameter bore (or wider due to the 45° chamfer starting at z=3mm — at z=60.7mm the bore has expanded well past the baffle). Since the woofer bore passes through the baffle (z=0 to z=10mm) and the split plane is at z=60.7mm, the woofer cutout does not intersect the split plane at all. The bolt positions at z=60.7 are in the wall zone, well outboard of the cavity. ✓
 
 ## 4. Advantages Over Original Design
 
