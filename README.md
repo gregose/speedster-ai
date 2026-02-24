@@ -1,10 +1,10 @@
-# Claudsters — 3D Printed Speedster Speaker Enclosure
+# SpeedsterAI — 3D Printed Speedster Speaker Enclosure
 
 A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.google.com/site/undefinition/bookshelf-speakers/speedster) bookshelf speakers, replacing the original 1/2" MDF cabinet with a 3D-printed PETG curved-back wedge.
 
 ## Specifications
 
-| Spec | Original (Carmody) | Claudsters v2 |
+| Spec | Original (Carmody) | SpeedsterAI |
 |------|-------------------|---------------|
 | Internal volume | 5.5 L | 5.51 L |
 | Port tuning | ~55 Hz | ~55 Hz (same port) |
@@ -62,8 +62,8 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 ## STL Downloads
 
-- [Front half](models/speedster_v2-front.stl) — print baffle-face down
-- [Back half](models/speedster_v2-back.stl) — print flat back-face down
+- [Front half](models/speedster-ai-front.stl) — print baffle-face down
+- [Back half](models/speedster-ai-back.stl) — print flat back-face down
 
 ## Using the SCAD File
 
@@ -74,7 +74,7 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 ### Rendering
 
-Open `speedster_v2.scad` in OpenSCAD. The default view shows the full assembled enclosure. Check the console for volume estimation and driver fit diagnostics.
+Open `speedster-ai.scad` in OpenSCAD. The default view shows the full assembled enclosure. Check the console for volume estimation and driver fit diagnostics.
 
 #### Standard Render Set
 

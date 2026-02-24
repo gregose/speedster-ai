@@ -1,6 +1,6 @@
-# Design Analysis — Claudsters v2
+# Design Analysis — SpeedsterAI
 
-This document verifies that the Claudsters v2 enclosure design is mechanically sound, dimensionally correct, and acoustically faithful to Paul Carmody's original Speedster specification.
+This document verifies that the SpeedsterAI enclosure design is mechanically sound, dimensionally correct, and acoustically faithful to Paul Carmody's original Speedster specification.
 
 ## 1. Acoustic Fidelity to Carmody's Design
 
@@ -8,7 +8,7 @@ This document verifies that the Claudsters v2 enclosure design is mechanically s
 
 **Carmody spec:** 5.5 liters (0.19 ft³)
 
-**Claudsters v2:** 5.51 liters (net, after subtracting port tube, entry flare bell, and pillar displacement)
+**SpeedsterAI:** 5.51 liters (net, after subtracting port tube, entry flare bell, and pillar displacement)
 
 The volume is computed via Simpson's rule on the inner cavity cross-sections at the front wall (z=10mm), midpoint (z=87mm), and back wall (z=164mm). The taper formula interpolates between inner baffle dimensions (160×280mm) and inner back dimensions (98×220mm) using a power-2.0 curve. The roundover inset is applied to both outer and inner cross-sections, maintaining uniform wall thickness.
 
@@ -24,7 +24,7 @@ For final verification, export `inner_cavity()` as STL and measure volume in sli
 
 **Carmody spec:** 1.375" diameter × 4.5" long, tuned to ~55 Hz
 
-**Claudsters v2:** 34.925mm diameter × 114.3mm long (exact conversion of Carmody's imperial specs)
+**SpeedsterAI:** 34.925mm diameter × 114.3mm long (exact conversion of Carmody's imperial specs)
 
 The port dimensions are unchanged from the original design. The Helmholtz resonance frequency depends on port area, port length, and box volume — all three are matched. Both port ends now have 15mm concave flares (entry and exit). Each flare modifies the end correction by approximately 3-5mm of effective port length. The combined effect may shift tuning down by ~2-3 Hz from the nominal 55 Hz. This is within Carmody's stated tolerance, and the flares' primary benefit — reduced air turbulence and chuffing noise at higher SPL — outweighs this minor shift.
 
@@ -32,7 +32,7 @@ The port dimensions are unchanged from the original design. The Helmholtz resona
 
 **Original:** 152mm (6") wide flat MDF baffle with sharp edges. Estimated baffle step frequency: ~720 Hz.
 
-**Claudsters v2:** 180mm wide baffle with 24mm cubic Hermite roundover (plus 2mm edge chamfer). Estimated baffle step: ~608 Hz. Roundover effective above ~2281 Hz.
+**SpeedsterAI:** 180mm wide baffle with 24mm cubic Hermite roundover (plus 2mm edge chamfer). Estimated baffle step: ~608 Hz. Roundover effective above ~2281 Hz.
 
 The baffle is 28mm wider than the original (180mm vs 152mm) to accommodate 10mm walls while maintaining internal clearance for the woofer screw circle and ensuring the woofer flange (125.5mm OD) sits entirely within the flat baffle face with 3.25mm margin per side. This shifts the baffle step down by ~112 Hz.
 
@@ -42,7 +42,7 @@ The 24mm roundover uses a cubic Hermite spline profile designed for FDM printabi
 
 **Carmody's design note:** Woofer is surface-mounted, tweeter is flush-mounted. The original design had the woofer slightly overlapping the tweeter flange.
 
-**Claudsters v2:**
+**SpeedsterAI:**
 - Woofer center: y = -45mm
 - Tweeter center: y = +55mm
 - Center-to-center: 100mm
@@ -58,7 +58,7 @@ The W4-1720 requires 89mm of depth behind the baffle. The internal cavity at the
 
 ### 1.6 Port Placement
 
-Carmody specifies the port "directly behind the tweeter." In Claudsters v2, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=49.7mm to z=164mm, entirely within the back half.
+Carmody specifies the port "directly behind the tweeter." In SpeedsterAI, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=49.7mm to z=164mm, entirely within the back half.
 
 ## 2. Mechanical Feasibility
 
@@ -66,11 +66,11 @@ Carmody specifies the port "directly behind the tweeter." In Claudsters v2, the 
 
 **Original:** 1/2" (12.7mm) MDF, density ~750 kg/m³, Young's modulus ~4 GPa
 
-**Claudsters v2:** 10mm PETG at 5-6 perimeters + 50-80% gyroid infill
+**SpeedsterAI:** 10mm PETG at 5-6 perimeters + 50-80% gyroid infill
 
 PETG has a Young's modulus of ~2.0 GPa (roughly half of MDF). However, the curved-back wedge shape provides structural advantage: curved surfaces resist pressure better than flat panels (shell stiffness). The 8 pillar pairs act as internal ties between the front and back halves, further resisting baffle flex.
 
-Carmody's original design specifies "no bracing" with 1/2" MDF. The Claudsters design adds 8 structural pillars despite using slightly thinner walls, which should provide equivalent or better panel rigidity.
+Carmody's original design specifies "no bracing" with 1/2" MDF. The SpeedsterAI design adds 8 structural pillars despite using slightly thinner walls, which should provide equivalent or better panel rigidity.
 
 ### 2.2 Split-Plane Joint Integrity
 
@@ -289,4 +289,4 @@ With s = D/I (depth/inset ratio), the slope magnitude `|d(inset)/dz| = (I/D)|3af
 
 ## 8. Summary
 
-The Claudsters v2 enclosure faithfully reproduces Carmody's acoustic design (5.51L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The front edge roundover profile is designed for FDM printability with max 45° overhang when printed baffle-down. The design is printable on a large-format FDM printer in PETG with minimal support material.
+The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (5.51L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The front edge roundover profile is designed for FDM printability with max 45° overhang when printed baffle-down. The design is printable on a large-format FDM printer in PETG with minimal support material.

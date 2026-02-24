@@ -1,6 +1,6 @@
 #!/bin/bash
-# Claudsters — Standard Render Pipeline
-# Generates 7 PNG renders from speedster_v2.scad using OpenSCAD CLI
+# SpeedsterAI — Standard Render Pipeline
+# Generates 7 PNG renders from speedster-ai.scad using OpenSCAD CLI
 #
 # Usage: ./render.sh [output_dir]
 #   output_dir defaults to ./renders/
@@ -17,7 +17,7 @@
 set -e
 
 OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
-SCAD="speedster_v2.scad"
+SCAD="speedster-ai.scad"
 OUTDIR="${1:-renders}"
 SIZE="1920,1080"
 CENTER="0,-92.5,0"

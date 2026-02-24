@@ -1,6 +1,6 @@
-# Claudsters — Design Context for AI Agents
+# SpeedsterAI — Design Context for AI Agents
 
-This document captures the full design history and decision rationale for the Claudsters project (3D printed Paul Carmody Speedster speaker enclosures). It is intended to provide context for future Claude sessions, Claude Code, or other AI agents continuing the work.
+This document captures the full design history and decision rationale for the SpeedsterAI project (3D printed Paul Carmody Speedster speaker enclosures). It is intended to provide context for AI agents continuing the work.
 
 ## Project Overview
 
@@ -172,8 +172,8 @@ Fixed horizontal plane artifacts visible in the slicer at model z≈88mm and z�
 ## File Structure
 
 ```
-claudsters/
-├── speedster_v2.scad    # Complete parametric OpenSCAD model
+speedster-ai/
+├── speedster-ai.scad    # Complete parametric OpenSCAD model
 ├── export.sh            # STL export pipeline (front + back halves)
 ├── render.sh            # Standard render pipeline (7 PNG views)
 ├── models/              # Exported STL files for printing
