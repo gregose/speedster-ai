@@ -83,7 +83,7 @@ split_z = enclosure_depth - wall - port_length;  // ~60.7mm from front
 
 // Tang Band W4-1720 (surface mounted)
 // Dimensions from mechanical drawing
-woofer_cutout_dia = 95.5;        // Baffle cutout diameter (mm)
+woofer_cutout_dia = 96.5;         // Baffle cutout diameter (mm) — +1mm tolerance from 95.5 spec
 woofer_flange_dia = 125.5;       // Overall flange OD (mm)
 woofer_screw_circle_dia = 115.0; // Screw hole circle diameter (mm)
 woofer_screw_dia = 5.2;          // Driver flange hole diameter (mm) - passes M4
@@ -94,30 +94,29 @@ woofer_total_depth = 89;         // Total depth behind baffle (mm)
 woofer_magnet_dia = 90;          // Magnet diameter for clearance (mm)
 woofer_y_offset = -45;           // Below center
 // M4 heat-set inserts for woofer mounting
-woofer_insert_dia = 5.6;         // M4 heat-set insert hole diameter
-woofer_insert_depth = 6;         // Insert pocket depth (mm)
+woofer_insert_dia = 5.5;         // M4 heat-set insert hole diameter
+woofer_insert_depth = 8;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // Fountek NeoCD1.0 (flush mounted, ROUND faceplate)
 // Dimensions from mechanical drawing
-tweeter_faceplate_dia = 100;      // Round faceplate OD (mm)
-tweeter_cutout_dia = 76;          // Baffle cutout for body (mm)
+tweeter_faceplate_dia = 100.5;    // Round faceplate OD (mm) — +0.5mm tolerance from 100 spec
+tweeter_cutout_dia = 76;          // Baffle cutout for ribbon access (mm, circular)
 tweeter_recess_depth = 4.0;       // Faceplate thickness / flush recess (mm)
 tweeter_ribbon_w = 24;            // Ribbon opening width (mm)  
 tweeter_ribbon_h = 46;            // Ribbon opening height (mm)
 tweeter_screw_spacing = 60.8;     // Square screw pattern spacing (mm)
 tweeter_screw_dia = 3.5;          // Driver faceplate hole diameter (mm) - passes M3
 tweeter_screw_count = 4;          // 4 screws in square pattern
-tweeter_body_dia = 80;            // Body barrel diameter behind baffle (mm)
 tweeter_rear_width = 55;          // Rear body width (mm)
 tweeter_mount_depth = 70;         // Total depth behind baffle (66 + 4mm faceplate)
 tweeter_y_offset = 55;            // Above center
 // M3 heat-set inserts for tweeter mounting
-tweeter_insert_dia = 4.5;         // M3 heat-set insert hole diameter
-tweeter_insert_depth = 5;         // Insert pocket depth (mm)
+tweeter_insert_dia = 4.4;         // M3 heat-set insert hole diameter
+tweeter_insert_depth = 6;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // --- Assembly hardware ---
-bolt_dia = 4.2;           // M4 through-hole diameter
-insert_dia = 5.6;         // M4 heat-set insert hole
+bolt_dia = 4.3;           // M4 through-hole diameter — +0.3mm tolerance for FDM
+insert_dia = 5.5;         // M4 heat-set insert hole
 insert_depth = 8;          // Insert pocket depth
 bolt_landing_dia = 8;      // Counterbore/landing diameter for bolt head
 bolt_inset = 12;           // Distance from edge to bolt center
@@ -133,13 +132,13 @@ tongue_inset = 5;          // From outer wall to tongue center (mm)
 
 // --- Binding post plate (Dayton Audio SBPP-SI) ---
 // From mechanical drawing: square plate with countersunk corner screws
-terminal_outer = 100.6;          // Overall plate size (mm, square)
+terminal_outer = 100.8;          // Overall plate size (mm, square) — +0.2mm tolerance
 terminal_cutout = 76.5;          // Inner cutout that passes through wall (mm, square)
 terminal_cutout_r = 4;           // Inner cutout corner radius (R4)
 terminal_screw_spacing = 84.5;   // Screw hole spacing (mm, square pattern)
 terminal_screw_dia = 4.5;        // M4 clearance hole in plate (mm)
-terminal_insert_dia = 5.6;       // M4 heat-set insert hole diameter (mm)
-terminal_insert_depth = 6;       // Heat-set insert pocket depth (mm)
+terminal_insert_dia = 5.5;       // M4 heat-set insert hole diameter (mm)
+terminal_insert_depth = 8;       // Heat-set insert pocket depth (mm) — extra depth to avoid bottoming out
 terminal_recess_depth = 3;       // Depth the plate lip inserts into wall (mm)
 terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
 
@@ -162,8 +161,8 @@ xover_hole_dia = 3.3;
 
 // Mounting boss parameters
 xover_boss_dia = 10;             // Boss pad diameter (mm)
-xover_insert_dia = 4.5;          // M3 heat-set insert hole diameter
-xover_insert_depth = 5;          // Insert pocket depth (mm)
+xover_insert_dia = 4.4;          // M3 heat-set insert hole diameter
+xover_insert_depth = 6;          // Insert pocket depth (mm) — extra depth to avoid bottoming out
 xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 
 // PCB placement in enclosure coordinates
@@ -402,13 +401,20 @@ module woofer_cutout() {
 
 module tweeter_cutout() {
     translate([0, tweeter_y_offset, 0]) {
-        // Flush recess for round faceplate (100mm dia, 4mm deep)
+        // Flush recess for round faceplate (101mm dia, 4mm deep)
         translate([0, 0, -0.1])
             cylinder(d = tweeter_faceplate_dia, h = tweeter_recess_depth + 0.1);
         
-        // Through-hole for driver body (76mm cutout)
+        // Through-hole for driver body — two overlapping rectangles to clear
+        // the body profile without intersecting the M3 heat-set insert pockets.
+        // Narrow tall slot (25×67mm) for the central ribbon/transformer section,
+        // plus wide short slot (56×47mm) for the body shoulders.
+        // Dimensions include 1mm clearance per side.
         translate([0, 0, -1])
-            cylinder(d = tweeter_cutout_dia, h = wall + 2);
+            linear_extrude(height = wall + 2) {
+                square([25, 67], center = true);
+                square([56, 47], center = true);
+            }
         
         // Heat-set insert pockets - 4x M3 in SQUARE pattern (60.8mm x 60.8mm)
         // Pockets start at the recess floor (z = tweeter_recess_depth)
