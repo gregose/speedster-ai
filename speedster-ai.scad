@@ -44,8 +44,8 @@ roundover_depth = 39;     // Depth over which roundover blends to full body (mm)
 baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softens front edge
 
 // --- Back dimensions ---
-// NOTE: back_width must be >= terminal_outer + 15mm for binding plate to fit
-back_width = 118;         // External width at rear (mm) - sized for binding plate
+// NOTE: back_width must accommodate binding posts (30mm spacing + margin)
+back_width = 118;         // External width at rear (mm)
 back_height = 225;        // External height at rear (mm) - proportional to baffle reduction
 back_corner_r = 42;       // Generous rounding on back
 
@@ -130,17 +130,16 @@ tongue_clearance = 0.3;    // Gap per side for print tolerance (mm)
 seal_depth = 1;            // Extra groove depth below tongue for foam/TPU (mm)
 tongue_inset = 5;          // From outer wall to tongue center (mm)
 
-// --- Binding post plate (Dayton Audio SBPP-SI) ---
-// From mechanical drawing: square plate with countersunk corner screws
-terminal_outer = 100.8;          // Overall plate size (mm, square) — +0.2mm tolerance
-terminal_cutout = 76.5;          // Inner cutout that passes through wall (mm, square)
-terminal_cutout_r = 4;           // Inner cutout corner radius (R4)
-terminal_screw_spacing = 84.5;   // Screw hole spacing (mm, square pattern)
-terminal_screw_dia = 4.5;        // M4 clearance hole in plate (mm)
-terminal_insert_dia = 5.6;       // M4 heat-set insert hole diameter (mm)
-terminal_insert_depth = 8;       // Heat-set insert pocket depth (mm) — extra depth to avoid bottoming out
-terminal_recess_depth = 3;       // Depth the plate lip inserts into wall (mm)
-terminal_y_offset = -45;         // Below center on rear face (limited by back_height)
+// --- Direct-mount binding posts (Dayton Audio BPP-SNB) ---
+// Two individual posts mounted directly through back wall.
+// Panel cutout per manufacturer drawing + 0.2mm print tolerance:
+//   2× Ø11.7mm holes, 30mm c-c, with 2.7mm × 14.2mm anti-rotation keyway
+bp_hole_dia = 11.7;              // Panel hole diameter (mm) — 11.5 + 0.2 tolerance
+bp_spacing = 30;                 // Post center-to-center spacing (mm)
+bp_keyway_width = 2.7;           // Anti-rotation slot width (mm) — 2.5 + 0.2 tolerance
+bp_keyway_total = 14.2;          // From hole top to keyway bottom (mm) — 14 + 0.2 tolerance
+bp_y_offset = -45;               // Vertical position on back face (same as old terminal)
+bp_intrusion = 34;               // Internal protrusion past wall (25mm shaft + 9mm lug)
 
 // --- Crossover PCB mounting ---
 // Two PCBs (high-pass and low-pass) separated from V-cut stack,
@@ -173,12 +172,11 @@ xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by 3mm)
 xover_z_start = 83;              // Enclosure Z of PCB front edge (clears woofer)
 
-// Binding post dimensions (Dayton BPP-SN)
-// Side-by-side posts at x=±9.5mm from terminal center (y=-45)
-// Intrusion past inner wall: ~24mm (15mm thread + 9mm solder lug)
-// Conservative clearance envelope: 30mm depth from inner back wall
-bp_spacing = 19.05;              // Post center-to-center spacing (mm)
-bp_intrusion = 30;               // Conservative depth past inner wall (mm)
+// Binding post dimensions (Dayton BPP-SNB)
+// Direct-mount through back wall at y=-45, 30mm spacing
+// Internal protrusion: 25mm shaft + 9mm terminal lug = 34mm past wall
+bp_shaft_length = 25;            // Threaded shaft below flange (mm)
+bp_lug_length = 9;               // Terminal lug below shaft (mm)
 
 // --- Rendering ---
 $fn = 100;
@@ -535,32 +533,26 @@ module port_bore() {
 }
 
 // ========================
-// TERMINAL CUP
+// BINDING POST HOLES
 // ========================
 
-module terminal_cutout() {
-    // Position on back face, centered horizontally
-    translate([0, terminal_y_offset, enclosure_depth - wall - 1]) {
-        // Main through-hole (76.5 x 76.5mm with R4 corners)
-        linear_extrude(height = wall + 2)
-            offset(r = terminal_cutout_r)
-                square([terminal_cutout - 2*terminal_cutout_r,
-                        terminal_cutout - 2*terminal_cutout_r], center = true);
-        
-        // Recess for plate flange (100.6 x 100.6mm, 3mm deep from outside)
-        translate([0, 0, wall + 1 - terminal_recess_depth])
-            linear_extrude(height = terminal_recess_depth + 1)
-                offset(r = 7)  // R7 outer corners per drawing
-                    square([terminal_outer - 14, terminal_outer - 14], center = true);
-        
-        // 4x M4 heat-set insert pockets (84.5mm square pattern)
-        // Bored from the recess floor inward (toward cavity)
-        for (sx = [-1, 1])
-            for (sy = [-1, 1])
-                translate([sx * terminal_screw_spacing/2,
-                           sy * terminal_screw_spacing/2,
-                           wall + 1 - terminal_recess_depth - terminal_insert_depth])
-                    cylinder(d = terminal_insert_dia, h = terminal_insert_depth + 0.1);
+module binding_post_holes() {
+    // Two keyhole-shaped through-holes on the back face
+    // Each is a Ø11.7mm circle + 2.7mm wide anti-rotation slot
+    bp_r = bp_hole_dia / 2;
+    slot_ext = bp_keyway_total - bp_hole_dia;  // extension past hole edge
+    
+    for (sx = [-1, 1]) {
+        translate([sx * bp_spacing/2, bp_y_offset, enclosure_depth - wall - 1]) {
+            linear_extrude(height = wall + 2) {
+                // Main hole
+                circle(d = bp_hole_dia);
+                // Anti-rotation keyway extending downward
+                // Overlaps into circle center so the union is continuous
+                translate([-bp_keyway_width/2, -bp_r - slot_ext])
+                    square([bp_keyway_width, slot_ext + bp_r]);
+            }
+        }
     }
 }
 
@@ -1064,7 +1056,7 @@ module full_enclosure() {
         woofer_cutout();
         tweeter_cutout();
         port_bore();
-        terminal_cutout();
+        binding_post_holes();
         bolt_through_holes();
         insert_pockets();
         
@@ -1113,7 +1105,7 @@ module front_half() {
 }
 
 // --- Back half ---
-// Contains: port tube (intact), terminal plate, back pillars,
+// Contains: port tube (intact), binding post holes, back pillars,
 // bolt holes + counterbores
 // Groove in split face accepts tongue from front half
 // Interlock bosses protrude from each back pillar toward front half
@@ -1287,8 +1279,8 @@ echo(str("  PCB y range:          ", xover_y_top - xover_pcb_height, " to ", xov
 echo(str("  PCB z range:          ", xover_z_start, " to ", xover_z_start + xover_pcb_width, "mm"));
 _xover_port_clear = 25 - xover_y_top;
 echo(str("  Port clearance below: ", _xover_port_clear, "mm (port bottom at y=25)"));
-_bp_pcb_y = xover_y_top - (-45);
-echo(str("  BP at y=-45 maps to:  PCB y=", _bp_pcb_y, " (normal comp height zone)"));
+_bp_pcb_y = xover_y_top - (bp_y_offset);
+echo(str("  BP at y=", bp_y_offset, " maps to: PCB y=", _bp_pcb_y, " (normal comp height zone)"));
 _xover_inductor_y = xover_y_top - xover_tall_pcb_y;
 echo(str("  Tall inductor at:     enc y=", _xover_inductor_y, " (BP zone: y=-60 to -30)"));
 echo(str("  Boss lengths:         ", xover_boss_min_depth, "mm min (at narrowest) to ~20mm"));
@@ -1327,7 +1319,7 @@ echo("");
 //   12. Mount tweeter (flush into recess) with M3 screws
 //   13. Mount woofer (surface mount) with M4 screws
 //   14. Connect drivers to crossover
-//   15. Install binding post plate on rear
+//   15. Install binding posts through back wall (nut from inside)
 //
 // Hardware BOM (per speaker):
 //   Enclosure assembly:
@@ -1343,11 +1335,11 @@ echo("");
 //     Closed-cell foam tape ~3mm wide, pressed into groove
 //     OR TPU filament bead laid into groove before mating
 //   Crossover mounting:
-//     8x M3 heat-set inserts (Ø4.5mm × 5mm deep) - side wall bosses (4 per side)
-//     8x M3 × 8mm socket head cap screws - through PCB holes (4 per board)
-//   Binding post plate:
-//     4x M4 heat-set inserts (Ø5.6mm × 6mm deep) - back wall recess floor
-//     4x M4 flat head (countersunk) cap screws - through plate countersunk holes
+//     6x M3 heat-set inserts (Ø4.5mm × 6mm deep) - side wall bosses (3 per side)
+//     6x M3 × 8mm socket head cap screws - through PCB holes (3 per board)
+//   Binding posts:
+//     2x Dayton BPP-SNB binding posts - direct mount through back wall
+//     2x M9 nuts (included with posts)
 //
 // Pillar interlock system:
 //   8x 16mm dia pillar pairs (front + back) at split-plane perimeter
@@ -1369,14 +1361,14 @@ echo("");
 //   Left wall: PCB flipped (rotated 180° around vertical), components face +x (inward)
 //   Right wall: PCB in normal orientation, components face -x (inward)
 //   Hole pattern differs per side due to asymmetric flip
-//   4x M3 heat-set inserts (Ø4.5mm × 5mm) per side wall (8 total)
-//   4x M3 × 8mm socket head cap screws per board (8 total)
-//   Boss pads integral to back half print, variable length 6-18mm
+//   3x M3 heat-set inserts (Ø4.5mm × 6mm) per side wall (6 total)
+//   3x M3 × 8mm socket head cap screws per board (6 total)
+//   Boss pads integral to back half print, variable length 6-20mm
 //   Each boss has a 45° triangular brace below for print support
-//   PCB position: y=-107 to +19, z=62 to 154
-//   Port tube clearance: 6mm above PCB top edge
+//   PCB position: y=-100 to +26, z=83 to 175
+//   Port tube clearance: inductor clears port by 3mm (circle-to-circle)
 //   Binding post clearance: components don't reach center at post y-level
-//   Tall inductor (PCB y=80) positioned below binding post zone
+//   Tall inductor (PCB y=102) positioned below binding post zone
 //
 // Airtightness:
 //   PETG at 5+ perimeters is inherently airtight
