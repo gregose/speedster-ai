@@ -64,8 +64,8 @@ port_length = 114.3;      // 4.5 inches in mm
 port_wall_thick = 2.5;    // Port tube wall thickness
 port_x_offset = 0;        // Centered horizontally
 port_y_offset = 45;       // Behind tweeter area (positive = upper)
-port_flare_r = 15;        // Radius of smooth flare at port exit (back face, mm)
-port_entry_flare_r = 15;  // Radius of smooth flare at port entry (cavity side, mm)
+port_flare_r = 15;        // Radial extent of exit flare at port exit (back face, mm)
+port_entry_flare_r = 15;  // Entry chamfer for tweeter clearance + turbulence reduction
 
 // Port reinforcement ribs at back wall junction
 port_rib_count = 6;        // Number of gusset ribs around port circumference
@@ -481,25 +481,26 @@ module port_ribs() {
 // 2D profile in the r-z plane (r = radial distance from port axis):
 //   - Entry flare: quarter-circle from bore wall outward at the cavity face
 //   - Straight bore wall (r = port_diameter/2) between flares
-//   - Exit flare: quarter-circle from bore wall outward at the back face
+//   - Exit flare: 45° linear chamfer within the back wall thickness
 // This is subtracted from the enclosure in one operation.
 module port_bore() {
     // Z coordinates (absolute, along enclosure depth axis)
     port_start_z = enclosure_depth - wall - port_length;
-    flare_start_z = enclosure_depth - port_flare_r;  // exit flare begins
+    inner_back_z = enclosure_depth - wall;  // inner back wall surface
     back_face_z = enclosure_depth;
     
     bore_r = port_diameter / 2;
+    // 45° chamfer: expands 1mm radially per 1mm depth, confined to wall
+    exit_chamfer_r = wall;  // max radial expansion = wall thickness
     
     translate([port_x_offset, port_y_offset, 0]) {
         rotate_extrude($fn = $fn) {
             // Build the 2D bore+flare profile as a union of shapes
             // All in the positive-r half-plane (required by rotate_extrude)
             
-            // 1. Straight bore: rectangle from port entrance to exit flare start
-            //    Width = bore radius, positioned at r=0 to r=bore_r
+            // 1. Straight bore: rectangle from port entrance to inner back wall
             translate([0, port_start_z - 1])
-                square([bore_r, flare_start_z - port_start_z + 1]);
+                square([bore_r, inner_back_z - port_start_z + 1]);
             
             // 2. Entry flare (cavity-side bell):
             //    Quarter-circle concave curve from bore_r + entry_flare_r
@@ -516,18 +517,18 @@ module port_bore() {
                     }
             }
             
-            // 3. Exit flare (back-face bell):
-            //    Quarter-circle from bore wall outward to the back face
-            translate([0, flare_start_z])
-                difference() {
-                    square([bore_r + port_flare_r, port_flare_r + 1]);
-                    // Quarter circle: center at (bore_r + flare_r, 0)
-                    // This creates the concave curve from the bore wall
-                    // tangent at z=flare_start_z, curving out to the 
-                    // back face tangent at r=bore_r+flare_r
-                    translate([bore_r + port_flare_r, 0])
-                        circle(r = port_flare_r, $fn = 60);
-                }
+            // 3. Exit flare: 45° linear chamfer within back wall.
+            //    Confined entirely to the wall region (inner_back_z to back_face_z)
+            //    so no internal cavity geometry change. Bore widens from bore_r
+            //    at inner wall to bore_r + wall at back face.
+            //    Printable: exactly 45° overhang when back half prints wall-down.
+            translate([0, inner_back_z])
+                polygon([
+                    [0, 0],
+                    [bore_r, 0],
+                    [bore_r + exit_chamfer_r, wall + 1],
+                    [0, wall + 1]
+                ]);
         }
     }
 }
