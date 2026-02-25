@@ -26,7 +26,7 @@ For final verification, export `inner_cavity()` as STL and measure volume in sli
 
 **SpeedsterAI:** 34.925mm diameter × 114.3mm long (exact conversion of Carmody's imperial specs)
 
-The port dimensions are unchanged from the original design. The Helmholtz resonance frequency depends on port area, port length, and box volume — all three are matched. Both port ends now have 15mm concave flares (entry and exit). Each flare modifies the end correction by approximately 3-5mm of effective port length. The combined effect may shift tuning down by ~2-3 Hz from the nominal 55 Hz. This is within Carmody's stated tolerance, and the flares' primary benefit — reduced air turbulence and chuffing noise at higher SPL — outweighs this minor shift.
+The port dimensions are unchanged from the original design. The Helmholtz resonance frequency depends on port area, port length, and box volume — all three are matched. The entry end has a 15mm quarter-circle concave flare (for tweeter clearance and turbulence reduction); the exit end has a 45° linear chamfer confined to the 10mm back wall (for FDM printability). The entry flare consumes 15mm of the 114.3mm bore for the flared section, leaving 99.3mm of straight bore. This shortens the effective acoustic length, shifting tuning ~3-4 Hz higher than the nominal calculated value. The exit chamfer adds a small end correction. The combined tuning is within practical tolerance, and the flares' primary benefit — reduced air turbulence and chuffing noise at higher SPL — outweighs this shift.
 
 ### 1.3 Baffle Diffraction
 
@@ -186,7 +186,7 @@ The most critical clearance is between corner bolts and the woofer/tweeter cutou
 
 1. **Reduced diffraction:** 24mm Hermite roundover + 2mm edge chamfer eliminates sharp baffle edges (the single biggest source of coloration in small speakers). Designed for FDM printability with max 45° overhang.
 2. **Curved back:** Eliminates parallel internal surfaces that cause standing waves at specific frequencies. The MDF box had 6 parallel pairs; the wedge has zero.
-3. **Port exit flare:** Reduces turbulence noise at moderate-to-high listening levels. The original had a plain tube end.
+3. **Port exit flare:** 45° linear chamfer in back wall reduces turbulence noise at the port exit. Entry bell (15mm quarter-circle) reduces turbulence at the cavity side and provides tweeter clearance. The original had plain tube ends.
 4. **Structural pillars:** 8 pillar pairs add internal reinforcement that the original "no bracing" MDF box lacked.
 5. **Repeatability:** Parametric CAD model produces identical enclosures every time. MDF builds vary with woodworking skill.
 6. **Woofer rear chamfer:** Opens the baffle bore behind the driver, reducing back-wave reflections that can color the midrange.
@@ -289,4 +289,4 @@ With s = D/I (depth/inset ratio), the slope magnitude `|d(inset)/dz| = (I/D)|3af
 
 ## 8. Summary
 
-The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (5.51L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flare) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, terminal plate, split joint) have been verified for dimensional clearance. The front edge roundover profile is designed for FDM printability with max 45° overhang when printed baffle-down. The design is printable on a large-format FDM printer in PETG with minimal support material.
+The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (5.50L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flares) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, binding posts, split joint) have been verified for dimensional clearance. The front edge roundover profile and port exit chamfer are designed for FDM printability with max 45° overhang. The design is printable on a large-format FDM printer in PETG with minimal support material.
