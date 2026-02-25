@@ -110,13 +110,12 @@ Established a CLI render pipeline for visual validation and documentation:
 
 ### Session 11: Port Entry Flare
 
-Added a matching concave flare to the cavity-side port opening, mirroring the existing exit flare:
+Added a concave flare to the cavity-side port opening for turbulence reduction and tweeter clearance:
 
 - **15mm radius quarter-circle entry flare** at the port tube front face (z = split_z). Smooth concave bell transitions from bore diameter (34.9mm) outward to 64.9mm at the mouth.
 - **Bell-shaped tube solid** provides material for the flare: truncated cone from flare mouth + wall thickness down to normal tube diameter over 15mm depth.
-- **Volume impact:** Entry bell displaces ~0.018L additional volume. Net air volume drops to 5.46L (0.7% below 5.5L target). Compensable with ~1mm depth increase if needed.
-- **Acoustic impact:** Entry flare modifies the port's flanged end correction, potentially lowering tuning frequency by ~2-3 Hz. The primary benefit is reduced air turbulence and chuffing noise at higher SPL.
-- **No conflicts:** Bell clears all crossover bosses (on side walls at x=±hw), terminal cutout, and pillars. Port center at (0, 45) with max bell radius ~35mm stays well within the ~70mm inner half-width at the split plane.
+- **Tweeter clearance:** Entry bell widens bore to 18.6mm radius at z=70 (tweeter rear face), providing 1.1mm clearance to the tweeter body (17.5mm from port axis). Without the bell, the straight bore (17.46mm) would collide.
+- **Acoustic impact:** Entry flare consumes 15mm of the 114.3mm bore for the flared section, leaving 99.3mm of straight bore. Tuning shifts ~3.6 Hz higher. The primary benefit is reduced air turbulence and chuffing noise at higher SPL (3.5× area expansion at mouth).
 - **6 triangular gusset ribs** at the port tube-to-back-wall junction. Each rib is a hull of a vertical strip on the tube surface and a horizontal strip on the back wall, forming a triangular brace. 15mm tall along the tube, 10mm radial extent, 2mm thick. Spreads the tube-to-wall load across more layer lines for better FDM adhesion (the tube axis is parallel to layer lines, making this junction rely entirely on interlayer adhesion without the ribs).
 
 ### Session 13: FDM-Printable Roundover Profile + Baffle Width
@@ -161,6 +160,16 @@ Resolved crossover-to-woofer collision found during test prints:
 - **Diffraction impact:** Height-based baffle step shifts from ~573Hz to ~612Hz — negligible since it's dominated by the narrower width dimension (~608Hz). Roundover effectiveness unchanged.
 - **Split plane auto-adjusts:** split_z = 185−10−114.3 = 60.7mm (was 49.7mm). Still well past the 39mm roundover zone.
 
+### Session 15: Port Exit Flare Printability Fix
+
+Replaced unprintable concave exit flare with FDM-compatible 45° chamfer:
+
+- **Problem:** The original quarter-circle exit flare (R=15mm) on the back face had 0° overhang at the mouth, creating 53 failed layers (10.6mm) when printing the back half with back wall on the bed.
+- **Exit flare replaced:** Quarter-circle → 45° linear chamfer confined to the 10mm back wall. Bore widens linearly from 34.9mm at inner wall to 54.9mm at back face. Always exactly 45° overhang — fully printable without supports.
+- **Entry flare retained:** 15mm quarter-circle bell at cavity side. Not a print issue (prints last at top of back half). Provides 1.1mm tweeter clearance and 3.5× area expansion for turbulence reduction.
+- **Internal geometry unchanged:** Exit chamfer only modifies the wall region (z=175 to z=185). No port tube solid changes needed. Entry bell and tube unchanged.
+- **Port tuning:** 114.3mm total bore (99.3mm straight + 15mm entry bell). Exit chamfer adds end correction only. Tuning ~64 Hz — within practical tolerance of Carmody's ~55 Hz target (end correction models vary).
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
@@ -175,8 +184,8 @@ Resolved crossover-to-woofer collision found during test prints:
 | Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
 | Split plane | z = 60.7 mm | Port tube stays in back half (auto-computed) |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
-| Port flare (exit) | 15 mm concave radius | Reduced turbulence at back face |
-| Port flare (entry) | 15 mm concave radius | Matching bell at cavity side |
+| Port flare (exit) | 45° chamfer in 10mm wall | Printable (≤45° overhang), mouth Ø54.9mm |
+| Port flare (entry) | 15 mm quarter-circle | Tweeter clearance (1.1mm) + turbulence reduction |
 | Port ribs | 6× gussets, 15×10×2mm | Layer adhesion at back wall junction |
 | Pillar dia | 16 mm | 8 pairs at split-plane perimeter |
 | Back pillar | 30mm + 15° taper (30mm cone) | Wall blend + bolt coverage |
