@@ -32,7 +32,7 @@ wall = 10;                // PETG wall thickness (mm)
 
 // --- Baffle (front face) dimensions ---
 baffle_width = 180;       // External width at front (mm) - widened for woofer flange clearance
-baffle_height = 281;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
+baffle_height = 264;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
 baffle_corner_r = 15;     // Corner rounding on front face
 
 // --- Front edge roundover ---
@@ -46,11 +46,11 @@ baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softe
 // --- Back dimensions ---
 // NOTE: back_width must accommodate binding posts (30mm spacing + margin)
 back_width = 118;         // External width at rear (mm)
-back_height = 225;        // External height at rear (mm) - proportional to baffle reduction
+back_height = 211;        // External height at rear (mm) - proportional to baffle reduction
 back_corner_r = 42;       // Generous rounding on back
 
 // --- Depth ---
-enclosure_depth = 185;    // Total external depth (mm) - extended for crossover clearance behind woofer
+enclosure_depth = 197;    // Total external depth (mm) - extended to clear 50mm sq tweeter body past port entry
 
 // --- Taper curve ---
 // Controls the shape of the wedge taper
@@ -1153,8 +1153,8 @@ render_mode = 0;
 
 // Display rotation: model uses Y=vertical, but OpenSCAD screen uses Z=up.
 // rotate([90,0,0]) stands the speaker upright for PNG renders (tweeter on top).
-// After rotation: X=horizontal, Y=depth(0=baffle,-185=back), Z=height.
-// Model center: (0, -92.5, 0). See render.sh for standard camera angles.
+// After rotation: X=horizontal, Y=depth(0=baffle,-197=back), Z=height.
+// Model center: (0, -98.5, 0). See render.sh for standard camera angles.
 // For STL export, set render_mode and don't apply this rotation.
 rotate([90, 0, 0])
 if (render_mode == 0) {
