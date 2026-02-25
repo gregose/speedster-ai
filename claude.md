@@ -170,22 +170,34 @@ Replaced unprintable concave exit flare with FDM-compatible 45° chamfer:
 - **Internal geometry unchanged:** Exit chamfer only modifies the wall region (z=175 to z=185). No port tube solid changes needed. Entry bell and tube unchanged.
 - **Port tuning:** 114.3mm total bore (99.3mm straight + 15mm entry bell). Exit chamfer adds end correction only. Tuning ~64 Hz — within practical tolerance of Carmody's ~55 Hz target (end correction models vary).
 
+### Session 16: Deeper Enclosure for Tweeter Clearance
+
+Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.0 rear body:
+
+- **Problem:** The tweeter rear body (including terminals) requires a 50mm × 50mm square clearance envelope extending 70mm behind the baffle. The port entry bell (centered at y=45, just 10mm from tweeter at y=55) overlapped with this envelope from z=60.7 to z=70 — a 9.3mm zone where the port bell wall material physically collided with the tweeter body.
+- **Root cause:** Previous clearance analysis used only the center-to-center distance (17.5mm from port axis to nearest tweeter edge), which showed 1.1mm clearance to the bore inner wall. But the 50mm square body extends in all directions from the tweeter center, and its flanks and sides pass through the annular port wall at angles away from the center-to-center line.
+- **Solution:** Increased `enclosure_depth` from 185mm → 197mm (+12mm). This pushes `port_start_z` from 60.7mm to 72.7mm — completely past the tweeter's 70mm depth with 2.7mm clearance. The tweeter and port no longer share any z-range, eliminating the collision entirely.
+- **Height reduced to maintain volume:** Baffle height 281→264mm, back height 225→211mm. Net volume: 5.507L (target 5.5L, +0.007L error). Proportional height ratio preserved at ~0.80.
+- **Driver fit verified:** Woofer flange bottom at y=−107.75mm has 24.2mm clearance to baffle edge (half-height = 132mm). Tweeter faceplate top at y=105.25mm has 26.8mm clearance.
+- **Crossover unaffected:** z_start=88mm, PCB extends to z=180mm, inner back wall now at z=187mm — 7mm clearance behind PCBs.
+- **Split plane auto-adjusts:** split_z = 197−10−114.3 = 72.7mm. Still well past the 39mm roundover zone (33.7mm margin).
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Baffle | 180 × 281 mm | Width for woofer flange; height reduced for volume with deeper enclosure |
-| Back | 118 × 225 mm, R42 corners | Terminal plate clearance; proportional height reduction |
-| Depth | 185 mm | Extended for crossover clearance behind woofer |
+| Baffle | 180 × 264 mm | Width for woofer flange; height reduced for volume with deeper enclosure |
+| Back | 118 × 211 mm, R42 corners | Terminal plate clearance; proportional height reduction |
+| Depth | 197 mm | Extended to clear 50mm sq tweeter body past port entry |
 | Wall | 10 mm PETG | Stiffness parity with 1/2" MDF |
 | Taper | Power 2.0 (quadratic) | Volume concentration near baffle |
 | Roundover inset | 24 mm | Diffraction control > ~2281 Hz |
 | Roundover depth | 39 mm | Extended for ≤45° FDM overhang |
 | Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
-| Split plane | z = 60.7 mm | Port tube stays in back half (auto-computed) |
+| Split plane | z = 72.7 mm | Port tube stays in back half (auto-computed) |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
 | Port flare (exit) | 45° chamfer in 10mm wall | Printable (≤45° overhang), mouth Ø54.9mm |
-| Port flare (entry) | 15 mm quarter-circle | Tweeter clearance (1.1mm) + turbulence reduction |
+| Port flare (entry) | 15 mm quarter-circle | Turbulence reduction (no tweeter overlap at depth=197) |
 | Port ribs | 6× gussets, 15×10×2mm | Layer adhesion at back wall junction |
 | Pillar dia | 16 mm | 8 pairs at split-plane perimeter |
 | Back pillar | 30mm + 15° taper (30mm cone) | Wall blend + bolt coverage |
@@ -195,7 +207,7 @@ Replaced unprintable concave exit flare with FDM-compatible 45° chamfer:
 | Groove | 3.6mm wide × 5mm deep | 0.3mm clearance + 1mm seal depth |
 | Interlock | 10mm dia × 2mm boss/recess | Boss on back, recess on front |
 | Crossover PCB | 92 × 126 mm, 3 holes per board | Holes: [43,5], [87,121], [5,121] |
-| Crossover z_start | 83 mm | Clears woofer depth (82mm from baffle) |
+| Crossover z_start | 88 mm | Clears woofer depth (89mm); PCB ends at z=180, 7mm from back wall |
 | Crossover y_top | 26 mm | Inductor clears port by 3mm; 38mm components clear |
 | Crossover face | ±46.3 mm from center | Corner-aware envelope positioning |
 | M4 heat-set insert | Ø5.6mm × 8mm deep | Woofer, pillars, terminal plate |
@@ -224,7 +236,7 @@ speedster-ai/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
-6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -174=back), Z=height(+up). Model center is at (0, -87, 0). Camera uses eye/center 6-parameter format.
+6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -197=back), Z=height(+up). Model center is at (0, -98.5, 0). Camera uses eye/center 6-parameter format.
 
 7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
 

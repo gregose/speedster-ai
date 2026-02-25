@@ -10,9 +10,9 @@
 #
 # Coordinate system after display rotation (rotate([90,0,0])):
 #   X = horizontal (left-right)
-#   Y = depth (0=baffle, -185=back)
+#   Y = depth (0=baffle, -197=back)
 #   Z = height (vertical, positive up, center ~0)
-#   Model center: (0, -92.5, 0)
+#   Model center: (0, -98.5, 0)
 
 set -e
 
@@ -20,7 +20,7 @@ OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
 SCAD="speedster-ai.scad"
 OUTDIR="${1:-renders}"
 SIZE="1920,1080"
-CENTER="0,-92.5,0"
+CENTER="0,-98.5,0"
 
 if [ ! -f "$SCAD" ]; then
     echo "Error: $SCAD not found. Run from project root." >&2

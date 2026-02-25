@@ -32,7 +32,7 @@ wall = 10;                // PETG wall thickness (mm)
 
 // --- Baffle (front face) dimensions ---
 baffle_width = 180;       // External width at front (mm) - widened for woofer flange clearance
-baffle_height = 281;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
+baffle_height = 264;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
 baffle_corner_r = 15;     // Corner rounding on front face
 
 // --- Front edge roundover ---
@@ -46,11 +46,11 @@ baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softe
 // --- Back dimensions ---
 // NOTE: back_width must accommodate binding posts (30mm spacing + margin)
 back_width = 118;         // External width at rear (mm)
-back_height = 225;        // External height at rear (mm) - proportional to baffle reduction
+back_height = 211;        // External height at rear (mm) - proportional to baffle reduction
 back_corner_r = 42;       // Generous rounding on back
 
 // --- Depth ---
-enclosure_depth = 185;    // Total external depth (mm) - extended for crossover clearance behind woofer
+enclosure_depth = 197;    // Total external depth (mm) - extended to clear 50mm sq tweeter body past port entry
 
 // --- Taper curve ---
 // Controls the shape of the wedge taper
@@ -168,9 +168,9 @@ xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 // PCB placement in enclosure coordinates
 // PCB long axis (126mm) runs vertically (Y), short axis (92mm) along Z
 // Board top at y=35, bottom at y=-91 (shifted up to clear back corner rounding)
-// Z from 83 to 175 (clears woofer depth, flush with inner back wall)
+// Z from 88 to 180 (clears woofer depth, 7mm from inner back wall)
 xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by 3mm)
-xover_z_start = 83;              // Enclosure Z of PCB front edge (clears woofer)
+xover_z_start = 88;              // Enclosure Z of PCB front edge (clears woofer, pushed toward back wall)
 
 // Binding post dimensions (Dayton BPP-SNB)
 // Direct-mount through back wall at y=-45, 30mm spacing
@@ -913,8 +913,13 @@ module xover_bosses(sign) {
         enc = xover_hole_enc(h, sign);
         ez = enc[0];  // enclosure z
         ey = enc[1];  // enclosure y
-        // Use envelope-aware wall position (min x within boss cylinder)
-        hw = min_wall_x_in_boss(ez, ey);
+        // Use center wall position for boss wall-side placement so the
+        // boss fully connects to the wall surface, even in corner zones
+        // where the wall curves inward. The boss may protrude slightly
+        // into the shell at perimeter points — this merges with the wall
+        // via the union. face_abs is still based on min_wall_x to ensure
+        // minimum boss depth for insert engagement.
+        hw = inner_wall_x_at(ez, ey);
         
         // Boss spans from actual wall inner surface to PCB face
         boss_len = hw - face_abs;
@@ -1153,8 +1158,8 @@ render_mode = 0;
 
 // Display rotation: model uses Y=vertical, but OpenSCAD screen uses Z=up.
 // rotate([90,0,0]) stands the speaker upright for PNG renders (tweeter on top).
-// After rotation: X=horizontal, Y=depth(0=baffle,-185=back), Z=height.
-// Model center: (0, -92.5, 0). See render.sh for standard camera angles.
+// After rotation: X=horizontal, Y=depth(0=baffle,-197=back), Z=height.
+// Model center: (0, -98.5, 0). See render.sh for standard camera angles.
 // For STL export, set render_mode and don't apply this rotation.
 rotate([90, 0, 0])
 if (render_mode == 0) {

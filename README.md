@@ -15,8 +15,8 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 | Baffle width | 152mm (6") | 180mm (woofer flange clearance + 10mm walls) |
 | Bracing | None | 8× pillar pairs with interlocks |
 | Shape | Rectangular box | Curved-back wedge with 24mm front roundover |
-| Enclosure depth | ~152mm | 174mm |
-| Back dimensions | N/A (rectangular) | 118 × 240mm, R42 corners |
+| Enclosure depth | ~152mm | 197mm |
+| Back dimensions | N/A (rectangular) | 118 × 211mm, R42 corners |
 
 ## Drivers
 
