@@ -179,7 +179,7 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 - **Solution:** Increased `enclosure_depth` from 185mm → 197mm (+12mm). This pushes `port_start_z` from 60.7mm to 72.7mm — completely past the tweeter's 70mm depth with 2.7mm clearance. The tweeter and port no longer share any z-range, eliminating the collision entirely.
 - **Height reduced to maintain volume:** Baffle height 281→264mm, back height 225→211mm. Net volume: 5.507L (target 5.5L, +0.007L error). Proportional height ratio preserved at ~0.80.
 - **Driver fit verified:** Woofer flange bottom at y=−107.75mm has 24.2mm clearance to baffle edge (half-height = 132mm). Tweeter faceplate top at y=105.25mm has 26.8mm clearance.
-- **Crossover unaffected:** z_start=83mm, PCB extends to z=175mm, inner back wall now at z=187mm — 12mm additional room behind PCBs.
+- **Crossover unaffected:** z_start=88mm, PCB extends to z=180mm, inner back wall now at z=187mm — 7mm clearance behind PCBs.
 - **Split plane auto-adjusts:** split_z = 197−10−114.3 = 72.7mm. Still well past the 39mm roundover zone (33.7mm margin).
 
 ## Current Locked Parameters
@@ -207,7 +207,7 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 | Groove | 3.6mm wide × 5mm deep | 0.3mm clearance + 1mm seal depth |
 | Interlock | 10mm dia × 2mm boss/recess | Boss on back, recess on front |
 | Crossover PCB | 92 × 126 mm, 3 holes per board | Holes: [43,5], [87,121], [5,121] |
-| Crossover z_start | 83 mm | Clears woofer depth (82mm from baffle) |
+| Crossover z_start | 88 mm | Clears woofer depth (89mm); PCB ends at z=180, 7mm from back wall |
 | Crossover y_top | 26 mm | Inductor clears port by 3mm; 38mm components clear |
 | Crossover face | ±46.3 mm from center | Corner-aware envelope positioning |
 | M4 heat-set insert | Ø5.6mm × 8mm deep | Woofer, pillars, terminal plate |

@@ -168,9 +168,9 @@ xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 // PCB placement in enclosure coordinates
 // PCB long axis (126mm) runs vertically (Y), short axis (92mm) along Z
 // Board top at y=35, bottom at y=-91 (shifted up to clear back corner rounding)
-// Z from 83 to 175 (clears woofer depth, flush with inner back wall)
+// Z from 88 to 180 (clears woofer depth, 7mm from inner back wall)
 xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by 3mm)
-xover_z_start = 83;              // Enclosure Z of PCB front edge (clears woofer)
+xover_z_start = 88;              // Enclosure Z of PCB front edge (clears woofer, pushed toward back wall)
 
 // Binding post dimensions (Dayton BPP-SNB)
 // Direct-mount through back wall at y=-45, 30mm spacing
@@ -913,8 +913,13 @@ module xover_bosses(sign) {
         enc = xover_hole_enc(h, sign);
         ez = enc[0];  // enclosure z
         ey = enc[1];  // enclosure y
-        // Use envelope-aware wall position (min x within boss cylinder)
-        hw = min_wall_x_in_boss(ez, ey);
+        // Use center wall position for boss wall-side placement so the
+        // boss fully connects to the wall surface, even in corner zones
+        // where the wall curves inward. The boss may protrude slightly
+        // into the shell at perimeter points — this merges with the wall
+        // via the union. face_abs is still based on min_wall_x to ensure
+        // minimum boss depth for insert engagement.
+        hw = inner_wall_x_at(ez, ey);
         
         // Boss spans from actual wall inner surface to PCB face
         boss_len = hw - face_abs;
