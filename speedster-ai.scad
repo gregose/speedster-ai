@@ -39,26 +39,26 @@ target_volume_liters = 5.5;
 wall = 10;                // PETG wall thickness (mm)
 
 // --- Baffle (front face) dimensions ---
-baffle_width = 180;       // External width at front (mm) - widened for woofer flange clearance
-baffle_height = 264;      // External height (mm) - reduced to maintain 5.5L with deeper enclosure
+baffle_width = 180;       // External width at front (mm)
+baffle_height = 264;      // External height (mm)
 baffle_corner_r = 15;     // Corner rounding on front face
 
 // --- Front edge roundover ---
 // Smooths baffle-to-side transition to reduce diffraction
 // Larger = better diffraction behavior, blends into taper
-baffle_roundover = 24;    // Front edge roundover inset (mm) — how far baffle face is narrowed
-roundover_depth = 39;     // Depth over which roundover blends to full body (mm)
+baffle_roundover = 20;    // Front edge roundover inset (mm) — diffraction control > ~5462 Hz
+roundover_depth = 33;     // Depth over which roundover blends to full body (mm)
                           // Decoupled from inset for FDM printability (max overhang ≤ 45°)
 baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softens front edge
 
 // --- Back dimensions ---
 // NOTE: back_width must accommodate binding posts (30mm spacing + margin)
 back_width = 118;         // External width at rear (mm)
-back_height = 211;        // External height at rear (mm) - proportional to baffle reduction
-back_corner_r = 42;       // Generous rounding on back
+back_height = 211;        // External height at rear (mm)
+back_corner_r = 17;       // Reduced from 42 for PCB clearance at bottom-back corner
 
 // --- Depth ---
-enclosure_depth = 197;    // Total external depth (mm) - extended to clear 50mm sq tweeter body past port entry
+enclosure_depth = 205;    // Total external depth (mm) - extended for tweeter-port clearance and PCB fit
 
 // --- Taper curve ---
 // Controls the shape of the wedge taper
@@ -71,7 +71,7 @@ port_diameter = 34.925;   // 1.375 inches in mm
 port_length = 114.3;      // 4.5 inches in mm
 port_wall_thick = 2.5;    // Port tube wall thickness
 port_x_offset = 0;        // Centered horizontally
-port_y_offset = 45;       // Behind tweeter area (positive = upper)
+port_y_offset = 52;       // Behind tweeter area (positive = upper) — raised to clear L3 inductor
 port_flare_r = 15;        // Radial extent of exit flare at port exit (back face, mm)
 port_entry_flare_r = 15;  // Entry chamfer for tweeter clearance + turbulence reduction
 
@@ -177,8 +177,8 @@ xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 // PCB long axis (126mm) runs vertically (Y), short axis (92mm) along Z
 // Board top at y=35, bottom at y=-91 (shifted up to clear back corner rounding)
 // Z from 88 to 180 (clears woofer depth, 7mm from inner back wall)
-xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by 3mm)
-xover_z_start = 88;              // Enclosure Z of PCB front edge (clears woofer, pushed toward back wall)
+xover_y_top = 26;                // Enclosure Y of PCB top edge (inductor clears port by ~2mm)
+xover_z_start = 90;              // Enclosure Z of PCB front edge (clears woofer depth 89.5mm)
 
 // Binding post dimensions (Dayton BPP-SNB)
 // Direct-mount through back wall at y=-45, 30mm spacing

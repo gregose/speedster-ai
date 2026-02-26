@@ -182,38 +182,54 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 - **Crossover unaffected:** z_start=88mm, PCB extends to z=180mm, inner back wall now at z=187mm — 7mm clearance behind PCBs.
 - **Split plane auto-adjusts:** split_z = 197−10−114.3 = 72.7mm. Still well past the 39mm roundover zone (33.7mm margin).
 
-### Session 17: Component Envelope Validation System
+### Session 18: Enclosure Geometry Revision — Clearance and Collision Fixes
 
-Added automated validation infrastructure for component fit and collision detection:
+Comprehensive geometry revision driven by collision detection findings from Session 17. The component envelope validation system identified three issues: PCB corner collision with curved inner wall, marginal tweeter-port Z-clearance, and L3 inductor-port tube collision. Resolved with minimal aesthetic changes.
 
-- **Component envelopes (`component-envelopes.scad`):** Simplified 3D clearance envelope models for all internal components using max-tolerance dimensions from manufacturer reference drawings:
-  - **Woofer (Tang Band W4-1720):** Multi-zone cylinder — Ø96mm basket frame + Ø91.8mm motor/magnet, 89.5mm deep from baffle
-  - **Tweeter (Fountek NeoCD1.0):** 55mm × 66mm rectangular box, 70mm total depth
-  - **Binding posts (Dayton BPP-SNB):** Two Ø11.3mm × 34mm cylinders from inner back wall
-  - **Crossover PCBs:** Placeholder envelopes (92×126mm PCB + 40mm component zone, clipped to cavity). To be refined with actual component placement.
-  - **Port tube:** Clipped port_tube_solid() within cavity z-range
-- **Analytical assertions (`validate_clearances()`):** 13 assert() checks run at every render — woofer flange fit, cavity wall clearances, tweeter-port z-separation, crossover spatial clearances, binding post fit, driver-to-driver gap, split plane position, and volume tolerance.
-- **render_mode=5 (Component Fit):** Transparent enclosure shell with color-coded envelopes for visual inspection (Red=woofer, Blue=tweeter, Green=binding posts, Orange/Gold=crossover, Cyan=port).
-- **validation_export variable (1–7):** Exports individual component envelopes as STL for geometric analysis. Used by validate.py.
-- **Geometric collision detection (`validate.py`):** Python script using trimesh + manifold3d. Exports each component + cavity as STL via OpenSCAD CLI, checks cavity containment and pair-wise intersections. Currently 6 expected failures from placeholder crossover envelopes.
-- **Validation pipeline (`validate.sh`):** One-command orchestration running OpenSCAD assertions + Python geometric checks. `--skip-geometric` for fast assertion-only mode.
+**Problems identified by validation:**
+1. **PCB bottom-back corner collision:** The 92×126mm crossover PCBs at z=90–182 had their bottom-back corner (z=182, y=-100) extending past the curved inner cavity wall. The large `back_corner_r=42mm` caused the inner wall to curve inward significantly at extreme corners, leaving 21.5mm of PCB embedded in wall material.
+2. **Tweeter-port Z-clearance:** Only 2.7mm gap between tweeter body (z=70) and port tube start (z=72.7). Risk of assembly interference.
+3. **L3 inductor-port collision:** The L3 inductor (Ø50mm cylinder on LP board) extended to y=29, overlapping the port tube bottom at y=25. A 4.9mm³ collision detected by geometric validation.
+
+**Solutions applied:**
+- **`enclosure_depth` 197→205mm (+8mm):** Pushes port start to z=80.7, increasing tweeter-port gap from 2.7mm to 10.7mm. Also shifts the taper ratio at z=182 to be less severe, improving PCB corner clearance.
+- **`back_corner_r` 42→17mm:** Sharper internal corners eliminate the curved wall intrusion at the PCB bottom-back corner. The inner wall at (z=182, y=-100) now has wall_x > face_x with margin.
+- **`baffle_roundover` 24→20mm, `roundover_depth` 39→33mm:** Slightly reduced to maintain woofer flange fit margin (4.1mm width, 4.1mm height) on the unchanged 180mm baffle. Diffraction effective above ~5462Hz (was ~2281Hz). Ratio 33/20=1.65 maintains ≤45° FDM overhang.
+- **`port_y_offset` 45→52mm:** Raises port tube 7mm, moving its bottom from y=25 to y=32. Clears the L3 inductor top (y=29) by 3mm. Zero acoustic impact — port tuning depends on length/diameter, not position.
+- **`xover_z_start` 88→90mm:** Moves PCB front edge 2mm deeper, past the woofer envelope total depth (89.5mm). Eliminates the Z-overlap zone between woofer body and crossover face position.
+
+**Crossover component envelopes refined:**
+- Replaced placeholder bounding-box crossover envelopes with per-component models based on KiCad .pos file and user-provided dimensions.
+- 5 components (C1, C2, C3, L1, L3) converted from rectangular to cylindrical envelopes, reducing envelope volume ~21% for more accurate collision margins.
+- 10 components total across LP (4) and HP (6) boards, positioned using calibrated KiCad-to-enclosure coordinate mapping.
+
+**Printability assertion added:**
+- Bambu Lab H2D build envelope check (350×320×325mm): verifies both halves fit within print volume including woofer flange protrusion.
+
+**Validation results:**
+- 20/20 assertions PASS (was 13 + 1 warning)
+- 21/21 geometric checks PASS (6 containment + 15 collision)
+- Net volume: 5.76L gross (5.43L effective after ~0.33L crossover displacement) — within acoustic tolerance of 5.5L target.
+
+**What stayed the same:** Baffle dimensions (180×264mm), back dimensions (118×211mm), wall thickness (10mm), taper power (2.0), driver positions, port dimensions, all driver mounting hardware, tongue-and-groove seal, pillar system, bolt pattern.
 
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
 |-----------|-------|-----------|
-| Baffle | 180 × 264 mm | Width for woofer flange; height reduced for volume with deeper enclosure |
-| Back | 118 × 211 mm, R42 corners | Terminal plate clearance; proportional height reduction |
-| Depth | 197 mm | Extended to clear 50mm sq tweeter body past port entry |
+| Baffle | 180 × 264 mm | Width for woofer flange; original proportions preserved |
+| Back | 118 × 211 mm, R17 corners | Sharper corners (was R42) for PCB clearance at bottom-back |
+| Depth | 205 mm | Extended from 197 for tweeter-port clearance (+10.7mm gap) |
 | Wall | 10 mm PETG | Stiffness parity with 1/2" MDF |
 | Taper | Power 2.0 (quadratic) | Volume concentration near baffle |
-| Roundover inset | 24 mm | Diffraction control > ~2281 Hz |
-| Roundover depth | 39 mm | Extended for ≤45° FDM overhang |
+| Roundover inset | 20 mm | Diffraction control > ~5462 Hz (reduced from 24 for driver fit) |
+| Roundover depth | 33 mm | ≤45° FDM overhang (ratio 33/20=1.65) |
 | Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
-| Split plane | z = 72.7 mm | Port tube stays in back half (auto-computed) |
+| Split plane | z = 80.7 mm | Port tube stays in back half (auto-computed from depth) |
 | Port | 34.925mm dia × 114.3mm long | Carmody spec: 55 Hz tuning |
+| Port Y offset | 52 mm | Raised from 45 to clear L3 inductor by 3mm |
 | Port flare (exit) | 45° chamfer in 10mm wall | Printable (≤45° overhang), mouth Ø54.9mm |
-| Port flare (entry) | 15 mm quarter-circle | Turbulence reduction (no tweeter overlap at depth=197) |
+| Port flare (entry) | 15 mm quarter-circle | Turbulence reduction |
 | Port ribs | 6× gussets, 15×10×2mm | Layer adhesion at back wall junction |
 | Pillar dia | 16 mm | 8 pairs at split-plane perimeter |
 | Back pillar | 30mm + 15° taper (30mm cone) | Wall blend + bolt coverage |
@@ -223,12 +239,14 @@ Added automated validation infrastructure for component fit and collision detect
 | Groove | 3.6mm wide × 5mm deep | 0.3mm clearance + 1mm seal depth |
 | Interlock | 10mm dia × 2mm boss/recess | Boss on back, recess on front |
 | Crossover PCB | 92 × 126 mm, 3 holes per board | Holes: [43,5], [87,121], [5,121] |
-| Crossover z_start | 88 mm | Clears woofer depth (89mm); PCB ends at z=180, 7mm from back wall |
-| Crossover y_top | 26 mm | Inductor clears port by 3mm; 38mm components clear |
-| Crossover face | ±46.3 mm from center | Corner-aware envelope positioning |
+| Crossover z_start | 90 mm | Clears woofer depth (89.5mm) with 0.5mm margin |
+| Crossover y_top | 26 mm | Inductor clears port by 3mm |
+| Crossover face | ±49.6 mm from center | Corner-aware envelope positioning |
 | M4 heat-set insert | Ø5.6mm × 8mm deep | Woofer, pillars, terminal plate |
 | M3 heat-set insert | Ø4.5mm × 6mm deep | Tweeter, crossover bosses |
 | M4 through-hole | Ø4.5mm | Bolt clearance holes |
+| Volume (gross) | 5.76 L | SCAD estimate (port + pillars subtracted) |
+| Volume (effective) | ~5.43 L | After ~0.33L crossover component displacement |
 
 ## File Structure
 
@@ -256,7 +274,7 @@ speedster-ai/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
-6. **Render pipeline:** `render.sh` generates 9 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–5) selects assembled/exploded/half/cavity/component-fit views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -197=back), Z=height(+up). Model center is at (0, -98.5, 0). Camera uses eye/center 6-parameter format.
+6. **Render pipeline:** `render.sh` generates 9 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–7) selects assembled/exploded/half/cavity/component-fit/front-half-components/back-half-components views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -205=back), Z=height(+up). Model center is at (0, -102.5, 0). Camera uses eye/center 6-parameter format.
 
 7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
 
@@ -268,7 +286,7 @@ speedster-ai/
 
 ## Open Items / Future Work
 
-- Detailed crossover component envelopes (HP and LP boards with actual component positions)
 - STL export and slicer test for printability
 - Prototype print and fit check
 - Acoustic measurement comparison to original Speedster
+- Consider reducing `back_corner_r` aesthetic impact (17mm is fairly sharp; explore 20-25mm if PCB layout changes)

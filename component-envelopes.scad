@@ -584,11 +584,9 @@ module validate_clearances() {
             "mm) extend past cavity center from face at x=", face_x));
 
     // --- Crossover PCB corners fit within cavity ---
-    // TODO: Known collision — PCB bottom-back corner extends past the curved
-    // inner cavity wall due to corner rounding (back_corner_r=42mm). The PCB
-    // face_x=48.1mm but wall curves to 33.5mm at (z=180, y=-100). Needs
-    // enclosure geometry fix (reduce back_corner_r or increase back_height).
-    // Using echo warnings until resolved; will convert to assert() after fix.
+    // The PCB is a flat rectangular board. Check all 4 corners are inside
+    // the tapered cavity. face_x is computed from mounting holes, but the
+    // PCB extends beyond the holes to its full 92×126mm extent.
     _pcb_y_bottom = xover_y_top - xover_pcb_height;
     _pcb_z_back = xover_z_start + xover_pcb_width;
     _pcb_corners = [
@@ -600,11 +598,11 @@ module validate_clearances() {
     for (c = _pcb_corners) {
         _wall_x_at_corner = inner_wall_x_at(c[0], c[1]);
         _ihh_at_corner = inner_half_h_at(c[0]);
-        if (abs(c[1]) > _ihh_at_corner)
-            echo(str("WARNING: PCB corner (z=", c[0], ",y=", c[1],
+        assert(abs(c[1]) <= _ihh_at_corner,
+            str("FAIL: PCB corner (z=", c[0], ",y=", c[1],
                 ") below cavity floor (half_h=", _ihh_at_corner, ")"));
-        if (_wall_x_at_corner < face_x)
-            echo(str("WARNING: PCB corner (z=", c[0], ",y=", c[1],
+        assert(_wall_x_at_corner >= face_x,
+            str("FAIL: PCB corner (z=", c[0], ",y=", c[1],
                 ") outside cavity wall (wall_x=", _wall_x_at_corner,
                 ", face_x=", face_x, ", gap=",
                 _wall_x_at_corner - face_x, "mm)"));
@@ -616,6 +614,29 @@ module validate_clearances() {
     // i.e., face_x < pcb_thick + comp_height
     assert(face_x > xover_pcb_thick + xover_comp_height,
         str("FAIL: Left and right crossover boards overlap in center"));
+
+    // --- Print envelope: Bambu Lab H2D (500 × 440 × 250 mm) ---
+    // Front half prints baffle-down: footprint = baffle_width × baffle_height,
+    // height = split_z (includes roundover + woofer flange protrusion)
+    // Back half prints split-face-down: footprint ≈ baffle dims at split_z,
+    // height = enclosure_depth - split_z
+    _h2d_x = 350;
+    _h2d_y = 320;
+    _h2d_z = 325;
+    _front_half_z = split_z + woofer_env_flange_thick;  // flange protrudes forward
+    _back_half_z = enclosure_depth - split_z;
+    assert(baffle_width <= _h2d_x,
+        str("FAIL: Baffle width (", baffle_width,
+            "mm) exceeds H2D X bed (", _h2d_x, "mm)"));
+    assert(baffle_height <= _h2d_y,
+        str("FAIL: Baffle height (", baffle_height,
+            "mm) exceeds H2D Y bed (", _h2d_y, "mm)"));
+    assert(_front_half_z <= _h2d_z,
+        str("FAIL: Front half (", _front_half_z,
+            "mm) exceeds H2D Z height (", _h2d_z, "mm)"));
+    assert(_back_half_z <= _h2d_z,
+        str("FAIL: Back half (", _back_half_z,
+            "mm) exceeds H2D Z height (", _h2d_z, "mm)"));
 
     echo("=== ALL CLEARANCE ASSERTIONS PASSED ===");
 }
