@@ -46,7 +46,7 @@ baffle_corner_r = 15;     // Corner rounding on front face
 // --- Front edge roundover ---
 // Smooths baffle-to-side transition to reduce diffraction
 // Larger = better diffraction behavior, blends into taper
-baffle_roundover = 20;    // Front edge roundover inset (mm) — diffraction control > ~5462 Hz
+baffle_roundover = 20;    // Front edge roundover inset (mm) — diffraction control > ~2737 Hz
 roundover_depth = 33;     // Depth over which roundover blends to full body (mm)
                           // Decoupled from inset for FDM printability (max overhang ≤ 45°)
 baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softens front edge
@@ -1350,8 +1350,9 @@ _xover_face_x = xover_pcb_face_x_abs();
 echo(str("  PCB face x-position:  ±", _xover_face_x, "mm from center"));
 echo(str("  PCB y range:          ", xover_y_top - xover_pcb_height, " to ", xover_y_top, "mm"));
 echo(str("  PCB z range:          ", xover_z_start, " to ", xover_z_start + xover_pcb_width, "mm"));
-_xover_port_clear = 25 - xover_y_top;
-echo(str("  Port clearance below: ", _xover_port_clear, "mm (port bottom at y=25)"));
+_port_bottom_y = port_y_offset - (port_diameter + 2*port_wall_thick)/2;
+_xover_port_clear = _port_bottom_y - xover_y_top;
+echo(str("  Port clearance below: ", _xover_port_clear, "mm (port bottom at y=", _port_bottom_y, ")"));
 _bp_pcb_y = xover_y_top - (bp_y_offset);
 echo(str("  BP at y=", bp_y_offset, " maps to: PCB y=", _bp_pcb_y, " (normal comp height zone)"));
 _xover_inductor_y = xover_y_top - xover_tall_pcb_y;
@@ -1373,7 +1374,7 @@ echo("");
 //
 // Print orientation:
 //   Front half: baffle face DOWN on bed (split face up)
-//   Back half:  split face DOWN on build plate
+//   Back half:  back face DOWN on bed (split face up)
 //
 // Assembly:
 //   1. Print both halves (pillars + interlocks integral to each)
@@ -1397,7 +1398,7 @@ echo("");
 // Hardware BOM (per speaker):
 //   Enclosure assembly:
 //     8x M4 heat-set inserts (Ø5.6mm × 8mm deep) - front half pillars
-//     8x M4 × 16mm socket head cap screws - from back
+//     8x M4 × 65mm socket head cap screws - from back
 //   Woofer mounting:
 //     4x M4 heat-set inserts (Ø5.6mm × 6mm deep) - baffle front face
 //     4x M4 × 10mm socket head cap screws - through driver flange

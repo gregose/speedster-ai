@@ -194,7 +194,7 @@ Comprehensive geometry revision driven by collision detection findings from Sess
 **Solutions applied:**
 - **`enclosure_depth` 197→205mm (+8mm):** Pushes port start to z=80.7, increasing tweeter-port gap from 2.7mm to 10.7mm. Also shifts the taper ratio at z=182 to be less severe, improving PCB corner clearance.
 - **`back_corner_r` 42→17mm:** Sharper internal corners eliminate the curved wall intrusion at the PCB bottom-back corner. The inner wall at (z=182, y=-100) now has wall_x > face_x with margin.
-- **`baffle_roundover` 24→20mm, `roundover_depth` 39→33mm:** Slightly reduced to maintain woofer flange fit margin (4.1mm width, 4.1mm height) on the unchanged 180mm baffle. Diffraction effective above ~5462Hz (was ~2281Hz). Ratio 33/20=1.65 maintains ≤45° FDM overhang.
+- **`baffle_roundover` 24→20mm, `roundover_depth` 39→33mm:** Slightly reduced to maintain woofer flange fit margin (4.1mm width, 4.1mm height) on the unchanged 180mm baffle. Diffraction effective above ~2737Hz (was ~2281Hz). Ratio 33/20=1.65 maintains ≤45° FDM overhang.
 - **`port_y_offset` 45→52mm:** Raises port tube 7mm, moving its bottom from y=25 to y=32. Clears the L3 inductor top (y=29) by 3mm. Zero acoustic impact — port tuning depends on length/diameter, not position.
 - **`xover_z_start` 88→90mm:** Moves PCB front edge 2mm deeper, past the woofer envelope total depth (89.5mm). Eliminates the Z-overlap zone between woofer body and crossover face position.
 
@@ -209,7 +209,7 @@ Comprehensive geometry revision driven by collision detection findings from Sess
 **Validation results:**
 - 20/20 assertions PASS (was 13 + 1 warning)
 - 21/21 geometric checks PASS (6 containment + 15 collision)
-- Net volume: 5.76L gross (5.43L effective after ~0.33L crossover displacement) — within acoustic tolerance of 5.5L target.
+- Net volume: 5.68L net / 5.35L effective (after ~0.33L crossover displacement) — verified via STL export (5.86L gross cavity).
 
 **What stayed the same:** Baffle dimensions (180×264mm), back dimensions (118×211mm), wall thickness (10mm), taper power (2.0), driver positions, port dimensions, all driver mounting hardware, tongue-and-groove seal, pillar system, bolt pattern.
 
@@ -222,7 +222,7 @@ Comprehensive geometry revision driven by collision detection findings from Sess
 | Depth | 205 mm | Extended from 197 for tweeter-port clearance (+10.7mm gap) |
 | Wall | 10 mm PETG | Stiffness parity with 1/2" MDF |
 | Taper | Power 2.0 (quadratic) | Volume concentration near baffle |
-| Roundover inset | 20 mm | Diffraction control > ~5462 Hz (reduced from 24 for driver fit) |
+| Roundover inset | 20 mm | Diffraction control > ~2737 Hz (reduced from 24 for driver fit) |
 | Roundover depth | 33 mm | ≤45° FDM overhang (ratio 33/20=1.65) |
 | Baffle edge chamfer | 2 mm | 45° bevel softening front face edge |
 | Split plane | z = 80.7 mm | Port tube stays in back half (auto-computed from depth) |
@@ -245,8 +245,8 @@ Comprehensive geometry revision driven by collision detection findings from Sess
 | M4 heat-set insert | Ø5.6mm × 8mm deep | Woofer, pillars, terminal plate |
 | M3 heat-set insert | Ø4.5mm × 6mm deep | Tweeter, crossover bosses |
 | M4 through-hole | Ø4.5mm | Bolt clearance holes |
-| Volume (gross) | 5.76 L | SCAD estimate (port + pillars subtracted) |
-| Volume (effective) | ~5.43 L | After ~0.33L crossover component displacement |
+| Volume (net) | 5.68 L | Verified via STL export (5.86L gross cavity) |
+| Volume (effective) | ~5.35 L | After ~0.33L crossover component displacement |
 
 ## File Structure
 

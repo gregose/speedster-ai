@@ -8,17 +8,19 @@ This document verifies that the SpeedsterAI enclosure design is mechanically sou
 
 **Carmody spec:** 5.5 liters (0.19 ft³)
 
-**SpeedsterAI:** 5.76 liters gross / ~5.43 liters effective
+**SpeedsterAI:** 5.68 liters net / ~5.35 liters effective
 
 The volume is computed via Simpson's rule on the inner cavity cross-sections. The taper formula interpolates between inner baffle dimensions (160×244mm) and inner back dimensions (98×191mm) using a power-2.0 curve. The roundover inset (20mm) is applied to both outer and inner cross-sections, maintaining uniform wall thickness.
 
+Note: The SCAD Simpson's rule uses 3 sample points (front, mid, back) which overestimates the front zone volume by not accounting for the roundover inset in the first 33mm. The verified volume below was measured from the exported `inner_cavity()` STL in Bambu Studio.
+
 Breakdown:
-- Gross cavity volume: ~5.94 L
+- Gross cavity volume: **5.86 L** (verified via STL export; SCAD 3-point estimate reports 5.94L)
 - Port tube + entry bell displacement: -0.16 L (tube: 39.925mm OD × 114.3mm, bell: truncated cone 70→40mm OD × 15mm)
 - Pillar displacement: -0.02 L (estimated, 8 front + 8 back pillars)
-- **SCAD net air volume: 5.76 L** (port and pillars subtracted)
+- **Net air volume: 5.68 L** (port and pillars subtracted)
 - Internal crossover displacement: -0.33 L (10 components across 2 PCBs + PCB boards + mounting bosses)
-- **Effective air volume: ~5.43 L** (1.3% below 5.5L target — within acoustic tolerance)
+- **Effective air volume: ~5.35 L** (2.7% below 5.5L target — within acoustic tolerance)
 
 The crossover volume displacement (0.33L) is a consequence of mounting the crossover internally on PCBs rather than externally as in Carmody's original MDF design. This shifts port tuning up ~1Hz — negligible in practice, especially considering poly-fill damping material will further modify the effective volume.
 
@@ -36,11 +38,11 @@ The port dimensions are unchanged from the original design. The Helmholtz resona
 
 **Original:** 152mm (6") wide flat MDF baffle with sharp edges. Estimated baffle step frequency: ~720 Hz.
 
-**SpeedsterAI:** 180mm wide baffle with 20mm cubic Hermite roundover (plus 2mm edge chamfer). Estimated baffle step: ~608 Hz. Roundover effective above ~5462 Hz.
+**SpeedsterAI:** 180mm wide baffle with 20mm cubic Hermite roundover (plus 2mm edge chamfer). Estimated baffle step: ~608 Hz. Roundover effective above ~2737 Hz.
 
 The baffle is 28mm wider than the original (180mm vs 152mm) to accommodate 10mm walls while maintaining internal clearance for the woofer screw circle and ensuring the woofer flange (125.5mm OD) sits entirely within the flat baffle face with 4.1mm margin per side. This shifts the baffle step down by ~112 Hz.
 
-The 20mm roundover (reduced from 24mm during Session 18 geometry revision to maintain driver fit margins) uses a cubic Hermite spline profile designed for FDM printability (max overhang exactly 45° when printed baffle-down). A 2mm 45° chamfer at the baffle face edge softens the front transition. The roundover is effective above ~5462 Hz — higher than the original 24mm design (~2281 Hz), but still covers the tweeter's primary range. The original Speedster had no roundover at all, so any roundover is a strict improvement.
+The 20mm roundover (reduced from 24mm during Session 18 geometry revision to maintain driver fit margins) uses a cubic Hermite spline profile designed for FDM printability (max overhang exactly 45° when printed baffle-down). A 2mm 45° chamfer at the baffle face edge softens the front transition. The roundover is effective above ~2737 Hz (c/2πr = 344000/(2π×20)). The original Speedster had no roundover at all, so any roundover is a strict improvement.
 
 ### 1.4 Driver Spacing and Crossover Compatibility
 
@@ -62,7 +64,7 @@ The W4-1720 requires 89mm of depth behind the baffle. The internal cavity at the
 
 ### 1.6 Port Placement
 
-Carmody specifies the port "directly behind the tweeter." In SpeedsterAI, the port is at y=+45mm (10mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=72.7mm to z=187mm, entirely within the back half. At depth=197mm, the port entry bell starts at z=72.7mm — 2.7mm past the tweeter's 70mm mounting depth, so the tweeter body and port tube occupy entirely separate z-ranges.
+Carmody specifies the port "directly behind the tweeter." In SpeedsterAI, the port is at y=+52mm (3mm below the tweeter center at y=+55mm), centered horizontally (x=0). The port tube extends from z=80.7mm to z=195mm, entirely within the back half. At depth=205mm, the port entry bell starts at z=80.7mm — 10.7mm past the tweeter's 70mm mounting depth, so the tweeter body and port tube occupy entirely separate z-ranges.
 
 ## 2. Mechanical Feasibility
 
@@ -277,7 +279,7 @@ The woofer flange (125.5mm OD) must sit entirely within the flat baffle face. Th
 | Baffle width | 180mm | 180mm | Unchanged |
 | Roundover inset | 24mm | 20mm | Reduced for driver margin with internal crossover |
 | Flat face width | 132mm | 140mm | 4.1mm margin per side (woofer flange) |
-| Diffraction threshold | ~2281 Hz | ~5462 Hz | Higher, but still covers tweeter range |
+| Diffraction threshold | ~2281 Hz | ~2737 Hz | Slightly higher, still covers tweeter range |
 | Roundover depth | 39mm | 33mm | Proportional (ratio 1.65, ≤45° overhang) |
 | Edge chamfer | 2mm | 2mm | Unchanged |
 
@@ -339,4 +341,4 @@ Three-layer validation system ensures all components fit within the enclosure:
 
 ## 9. Summary
 
-The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (~5.43L effective volume accounting for internal crossover displacement, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flares) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, binding posts, split joint, crossover PCB mounting) have been verified for dimensional clearance through a comprehensive validation pipeline (20 analytical assertions + 21 geometric collision/containment checks). The front edge roundover profile and port exit chamfer are designed for FDM printability with max 45° overhang. The design fits within the Bambu Lab H2D print envelope (350×320×325mm) and is printable in PETG with minimal support material.
+The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (~5.35L effective volume accounting for internal crossover displacement, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flares) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, binding posts, split joint, crossover PCB mounting) have been verified for dimensional clearance through a comprehensive validation pipeline (20 analytical assertions + 21 geometric collision/containment checks). The front edge roundover profile and port exit chamfer are designed for FDM printability with max 45° overhang. The design fits within the Bambu Lab H2D print envelope (350×320×325mm) and is printable in PETG with minimal support material.

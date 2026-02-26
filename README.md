@@ -6,7 +6,7 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 | Spec | Original (Carmody) | SpeedsterAI |
 |------|-------------------|---------------|
-| Internal volume | 5.5 L | 5.76 L gross (~5.43 L effective) |
+| Internal volume | 5.5 L | 5.68 L net (~5.35 L effective) |
 | Port tuning | ~55 Hz | ~55 Hz (same port) |
 | Port | 1.375" dia × 4.5" long | 34.925mm × 114.3mm + 15mm entry bell / 45° exit chamfer |
 | Woofer | Tang Band W4-1720 (surface) | Same (surface mount, M4 heat-set inserts) |
@@ -29,7 +29,7 @@ A parametric OpenSCAD enclosure for Paul Carmody's [Speedster](https://sites.goo
 
 **Curved-back wedge shape** with quadratic taper (power 2.0) from 180×264mm baffle to 118×211mm back over 205mm depth. Concentrates volume near the baffle where driver clearance matters most, then tapers aggressively toward the back.
 
-**20mm front edge roundover** with a cubic Hermite spline profile, plus a 2mm 45° baffle edge chamfer. Designed for FDM printability (max overhang exactly 45° when printed baffle-down). Reduces diffraction effects above ~5462 Hz. The original MDF box had sharp baffle edges — any roundover is an improvement.
+**20mm front edge roundover** with a cubic Hermite spline profile, plus a 2mm 45° baffle edge chamfer. Designed for FDM printability (max overhang exactly 45° when printed baffle-down). Reduces diffraction effects above ~2737 Hz. The original MDF box had sharp baffle edges — any roundover is an improvement.
 
 **Port flares** reduce turbulence noise and chuffing at the port openings. The cavity-side entry uses a 15mm concave quarter-circle bell for smooth airflow expansion. The back-face exit uses a 45° linear chamfer confined to the 10mm wall for FDM printability. Six triangular gusset ribs reinforce the port tube-to-back-wall junction for reliable FDM layer adhesion.
 
@@ -120,7 +120,7 @@ Alternatively, in the OpenSCAD GUI, uncomment ONE export option at the bottom of
 
 ### Adjusting Volume
 
-Change `enclosure_depth` (currently 205mm). The echo block reports estimated volume. Each 1mm of depth change ≈ 0.037L. Current gross volume is 5.76L; effective air volume is ~5.43L after subtracting crossover component displacement (~0.33L).
+Change `enclosure_depth` (currently 205mm). The echo block reports estimated volume. Each 1mm of depth change ≈ 0.033L. Current verified gross volume is 5.86L (via STL export); net is 5.68L after port/pillar displacement; effective air volume is ~5.35L after subtracting crossover component displacement (~0.33L). Note: the SCAD Simpson's rule overestimates by ~0.08L because it uses only 3 sample points and doesn't fully capture the roundover zone.
 
 ### Validating the Design
 
@@ -186,7 +186,7 @@ The component fit can also be inspected visually with `render_mode=5` (transpare
 | Qty | Item | Spec |
 |-----|------|------|
 | 8 | M4 heat-set inserts | Ø5.6mm × 8mm deep |
-| 8 | M4 socket head cap screws | ~60mm length |
+| 8 | M4 socket head cap screws | ~65mm length |
 
 ### Woofer Mounting
 | Qty | Item | Spec |
