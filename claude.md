@@ -182,6 +182,22 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 - **Crossover unaffected:** z_start=88mm, PCB extends to z=180mm, inner back wall now at z=187mm — 7mm clearance behind PCBs.
 - **Split plane auto-adjusts:** split_z = 197−10−114.3 = 72.7mm. Still well past the 39mm roundover zone (33.7mm margin).
 
+### Session 17: Component Envelope Validation System
+
+Added automated validation infrastructure for component fit and collision detection:
+
+- **Component envelopes (`component-envelopes.scad`):** Simplified 3D clearance envelope models for all internal components using max-tolerance dimensions from manufacturer reference drawings:
+  - **Woofer (Tang Band W4-1720):** Multi-zone cylinder — Ø96mm basket frame + Ø91.8mm motor/magnet, 89.5mm deep from baffle
+  - **Tweeter (Fountek NeoCD1.0):** 55mm × 66mm rectangular box, 70mm total depth
+  - **Binding posts (Dayton BPP-SNB):** Two Ø11.3mm × 34mm cylinders from inner back wall
+  - **Crossover PCBs:** Placeholder envelopes (92×126mm PCB + 40mm component zone, clipped to cavity). To be refined with actual component placement.
+  - **Port tube:** Clipped port_tube_solid() within cavity z-range
+- **Analytical assertions (`validate_clearances()`):** 13 assert() checks run at every render — woofer flange fit, cavity wall clearances, tweeter-port z-separation, crossover spatial clearances, binding post fit, driver-to-driver gap, split plane position, and volume tolerance.
+- **render_mode=5 (Component Fit):** Transparent enclosure shell with color-coded envelopes for visual inspection (Red=woofer, Blue=tweeter, Green=binding posts, Orange/Gold=crossover, Cyan=port).
+- **validation_export variable (1–7):** Exports individual component envelopes as STL for geometric analysis. Used by validate.py.
+- **Geometric collision detection (`validate.py`):** Python script using trimesh + manifold3d. Exports each component + cavity as STL via OpenSCAD CLI, checks cavity containment and pair-wise intersections. Currently 6 expected failures from placeholder crossover envelopes.
+- **Validation pipeline (`validate.sh`):** One-command orchestration running OpenSCAD assertions + Python geometric checks. `--skip-geometric` for fast assertion-only mode.
+
 ## Current Locked Parameters
 
 | Parameter | Value | Rationale |
@@ -218,14 +234,18 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 
 ```
 speedster-ai/
-├── speedster-ai.scad    # Complete parametric OpenSCAD model
-├── export.sh            # STL export pipeline (front + back halves)
-├── render.sh            # Standard render pipeline (7 PNG views)
-├── models/              # Exported STL files for printing
-├── renders/             # Generated PNG renders
-├── README.md            # Project overview, BOM, assembly
-├── claude.md            # This file — AI agent context
-└── analysis.md          # Design verification and analysis
+├── speedster-ai.scad         # Complete parametric OpenSCAD model
+├── component-envelopes.scad  # Component clearance envelope models + assertions
+├── export.sh                 # STL export pipeline (front + back halves)
+├── render.sh                 # Standard render pipeline (9 PNG views)
+├── validate.sh               # Validation pipeline (assertions + geometric checks)
+├── validate.py               # Python geometric collision detection (trimesh)
+├── models/                   # Exported STL files for printing
+├── renders/                  # Generated PNG renders
+├── references/               # Component reference drawings and datasheets
+├── README.md                 # Project overview, BOM, assembly
+├── claude.md                 # This file — AI agent context
+└── analysis.md               # Design verification and analysis
 ```
 
 ## Key Implementation Notes for Agents
@@ -236,15 +256,19 @@ speedster-ai/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
-6. **Render pipeline:** `render.sh` generates 7 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–4) selects assembled/exploded/half/cavity views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -197=back), Z=height(+up). Model center is at (0, -98.5, 0). Camera uses eye/center 6-parameter format.
+6. **Render pipeline:** `render.sh` generates 9 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–5) selects assembled/exploded/half/cavity/component-fit views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -197=back), Z=height(+up). Model center is at (0, -98.5, 0). Camera uses eye/center 6-parameter format.
 
 7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
 
 8. **Roundover profile:** The `roundover_inset_at(z)` function defines the compound front edge profile. It has a 2mm 45° chamfer at the baffle face, then a cubic Hermite spline blending to the full body width at `roundover_depth`. The inner cavity also applies this inset to maintain uniform wall thickness. When changing `baffle_roundover` or `roundover_depth`, keep the ratio `roundover_depth / baffle_roundover ≥ 1.0` to ensure max overhang ≤ 45°.
 
+9. **Component envelope validation:** `component-envelopes.scad` defines simplified 3D clearance envelopes for all internal components (woofer, tweeter, binding posts, crossover PCBs, port tube). Envelopes use max-tolerance dimensions from manufacturer drawings. `validate_clearances()` runs assert() checks on analytical clearances at every render. `validate.py` exports each envelope as STL and checks cavity containment + pair-wise collisions using trimesh/manifold3d. Run `./validate.sh` for full validation. The `validation_export` variable (1–7) exports individual components for geometric analysis.
+
+10. **Component envelope coordinate system:** Envelopes are positioned in the same coordinate system as the enclosure (z=0 at baffle, y=0 at center). Woofer envelope starts at z=wall (inner baffle face); tweeter body starts at z=wall; binding posts extend from z=enclosure_depth-wall inward; crossover PCBs are on side walls at x=±xover_pcb_face_x_abs().
+
 ## Open Items / Future Work
 
-- Crossover mounting solution inside back cavity
+- Detailed crossover component envelopes (HP and LP boards with actual component positions)
 - STL export and slicer test for printability
 - Prototype print and fit check
 - Acoustic measurement comparison to original Speedster

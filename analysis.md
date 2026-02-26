@@ -287,6 +287,52 @@ The cubic Hermite spline satisfies four boundary conditions:
 
 With s = D/I (depth/inset ratio), the slope magnitude `|d(inset)/dz| = (I/D)|3af² + 2bf + c|` is maximized at f=0 where it equals exactly 1.0 (45°). The derivative of the slope w.r.t. f is always positive for f ∈ [0,1], confirming monotonically decreasing overhang. This holds for any s ≥ 1.
 
-## 8. Summary
+## 8. Component Envelope Validation
+
+### 8.1 Validation Infrastructure
+
+Three-layer validation system ensures all components fit within the enclosure:
+
+1. **Analytical assertions** (13 checks, run at every render):
+   - Woofer flange fits flat baffle face (width and height)
+   - Woofer/tweeter body fits within cavity at deepest z-point
+   - Tweeter body ends before port tube starts (z-range separation)
+   - Crossover PCBs clear woofer body (3D spatial check: woofer radius < face_x)
+   - Crossover component zone clears port tube (3D spatial check)
+   - Binding post intrusion within crossover z-range
+   - Split plane clears roundover zone
+   - Driver-to-driver gap positive
+   - Left/right crossover boards don't overlap
+
+2. **Visual inspection** (render_mode=5):
+   - Transparent enclosure with color-coded component envelopes
+   - Red=woofer, Blue=tweeter, Green=binding posts, Orange/Gold=crossover, Cyan=port
+
+3. **Geometric collision detection** (validate.py):
+   - Exports each component + cavity as individual STLs
+   - Checks cavity containment (component - cavity = empty)
+   - Checks pair-wise intersections (A ∩ B = empty)
+   - 21 total checks (6 containment + 15 pair-wise)
+
+### 8.2 Component Envelope Dimensions (max tolerance)
+
+| Component | Envelope Shape | Key Dimensions |
+|-----------|---------------|----------------|
+| Woofer | Multi-zone cylinder | Ø96mm basket + Ø91.8mm motor, 89.5mm deep |
+| Tweeter | Rectangular box | 55mm × 66mm × 66mm body, 70mm total depth |
+| Binding posts (×2) | Cylinders | Ø11.3mm × 34mm, from inner back wall |
+| Crossover HP/LP (×2) | PCB slab + component zone | 92×126mm + 40mm height (placeholder) |
+| Port tube | Clipped solid | Ø39.9mm OD with entry bell, cavity z-range |
+
+### 8.3 Current Validation Status
+
+- **Phase 1 (assertions):** All 13 checks PASS
+- **Phase 2 (geometric):** 15 of 21 checks PASS, 6 FAIL (all crossover-related)
+  - Crossover HP/LP containment: 114mm³ protrusion at cavity corner rounding
+  - Woofer × crossover: 4062mm³ overlap in z=88-89.5 placeholder zone
+  - Binding posts × crossover: 2690mm³ overlap in placeholder component zone
+  - All failures are expected — crossover envelopes are placeholder boxes awaiting actual component placement data
+
+## 9. Summary
 
 The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (5.50L volume, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flares) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, binding posts, split joint) have been verified for dimensional clearance. The front edge roundover profile and port exit chamfer are designed for FDM printability with max 45° overhang. The design is printable on a large-format FDM printer in PETG with minimal support material.

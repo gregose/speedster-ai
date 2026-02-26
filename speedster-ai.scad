@@ -21,6 +21,14 @@
 // ============================================================
 
 // ========================
+// COMPONENT ENVELOPES
+// ========================
+// Clearance envelope models for all internal components.
+// Used for fit visualization (render_mode=5), collision assertions,
+// and geometric validation (validate.py).
+include <component-envelopes.scad>
+
+// ========================
 // PARAMETRIC VARIABLES
 // ========================
 
@@ -147,7 +155,7 @@ bp_intrusion = 34;               // Internal protrusion past wall (25mm shaft + 
 // PCB dimensions from gregose/speedster-crossover KiCad layout.
 xover_pcb_width = 92;            // PCB width (mm) - maps to Z axis
 xover_pcb_height = 126;          // PCB height (mm) - maps to Y axis
-xover_pcb_thick = 1.6;           // PCB board thickness (mm)
+xover_pcb_thick = 1.6;           // PCB board thickness (mm) — conservative (actual 1.2mm)
 xover_comp_height = 40;          // Max component height, most parts (mm)
 xover_comp_height_tall = 50;     // Tallest inductor height (mm)
 xover_tall_pcb_y = 80;           // Tall inductor Y position on PCB (from top=0)
@@ -1153,31 +1161,90 @@ module seal_joint_3d() {
 //   2 = Front half only
 //   3 = Back half only
 //   4 = Inner cavity (for volume check)
+//   5 = Component fit (ghost shell + colored envelopes)
+//   6 = Front half + components (woofer, tweeter)
+//   7 = Back half + components (port, binding posts, crossover)
 // Override from CLI: openscad -D render_mode=1 ...
 render_mode = 0;
+
+// validation_export: when > 0, exports individual component envelopes
+// for geometric collision detection (validate.py). Overrides render_mode.
+//   0 = normal (render_mode controls)
+//   1 = inner cavity only
+//   2 = woofer envelope
+//   3 = tweeter envelope
+//   4 = binding post envelopes
+//   5 = crossover HP envelope (right wall)
+//   6 = crossover LP envelope (left wall)
+//   7 = port tube envelope
+// Override from CLI: openscad -D validation_export=2 ...
+validation_export = 0;
 
 // Display rotation: model uses Y=vertical, but OpenSCAD screen uses Z=up.
 // rotate([90,0,0]) stands the speaker upright for PNG renders (tweeter on top).
 // After rotation: X=horizontal, Y=depth(0=baffle,-197=back), Z=height.
 // Model center: (0, -98.5, 0). See render.sh for standard camera angles.
 // For STL export, set render_mode and don't apply this rotation.
-rotate([90, 0, 0])
-if (render_mode == 0) {
-    // Full assembled visualization
-    color("SlateBlue", 0.7) full_enclosure();
-} else if (render_mode == 1) {
-    // Exploded view (shows pillar interlocks + tongue-and-groove)
-    translate([0, 0, -40]) color("SteelBlue", 0.8) front_half();
-    translate([0, 0, 40]) color("CornflowerBlue", 0.8) back_half();
-} else if (render_mode == 2) {
-    // Front half (baffle side)
-    color("SteelBlue", 0.8) front_half();
-} else if (render_mode == 3) {
-    // Back half
-    color("CornflowerBlue", 0.8) back_half();
-} else if (render_mode == 4) {
-    // Inner cavity only (for volume check in slicer)
-    inner_cavity();
+
+if (validation_export > 0) {
+    // Export individual components for geometric validation (no rotation)
+    if (validation_export == 1) {
+        inner_cavity();
+    } else if (validation_export == 2) {
+        woofer_envelope();
+    } else if (validation_export == 3) {
+        tweeter_envelope();
+    } else if (validation_export == 4) {
+        binding_post_envelopes();
+    } else if (validation_export == 5) {
+        crossover_envelope_hp();
+    } else if (validation_export == 6) {
+        crossover_envelope_lp();
+    } else if (validation_export == 7) {
+        port_envelope();
+    }
+} else {
+    rotate([90, 0, 0])
+    if (render_mode == 0) {
+        // Full assembled visualization
+        color("SlateBlue", 0.7) full_enclosure();
+    } else if (render_mode == 1) {
+        // Exploded view (shows pillar interlocks + tongue-and-groove)
+        translate([0, 0, -40]) color("SteelBlue", 0.8) front_half();
+        translate([0, 0, 40]) color("CornflowerBlue", 0.8) back_half();
+    } else if (render_mode == 2) {
+        // Front half (baffle side)
+        color("SteelBlue", 0.8) front_half();
+    } else if (render_mode == 3) {
+        // Back half
+        color("CornflowerBlue", 0.8) back_half();
+    } else if (render_mode == 4) {
+        // Inner cavity only (for volume check in slicer)
+        inner_cavity();
+    } else if (render_mode == 5) {
+        // Component fit visualization — full ghost enclosure
+        // '%' background modifier renders enclosure as ghost/wireframe
+        // that does NOT occlude the component envelopes inside
+        % full_enclosure();
+        color("Red", 0.7) woofer_envelope();
+        color("DodgerBlue", 0.7) tweeter_envelope();
+        color("Lime", 0.7) binding_post_envelopes();
+        color("Orange", 0.7) crossover_envelope_hp();
+        color("Gold", 0.7) crossover_envelope_lp();
+        color("Cyan", 0.7) port_envelope();
+    } else if (render_mode == 6) {
+        // Front half (opaque) + front-mounted component envelopes
+        color("SteelBlue", 0.8) front_half();
+        color("Red", 0.9) woofer_envelope();
+        color("DodgerBlue", 0.9) tweeter_envelope();
+    } else if (render_mode == 7) {
+        // Back half (opaque) + back-mounted component envelopes
+        color("CornflowerBlue", 0.8) back_half();
+        color("Lime", 0.9) binding_post_envelopes();
+        color("Orange", 0.9) crossover_envelope_hp();
+        color("Gold", 0.9) crossover_envelope_lp();
+        color("Cyan", 0.9) port_envelope();
+    }
 }
 
 
