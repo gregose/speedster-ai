@@ -1,6 +1,6 @@
 #!/bin/bash
 # SpeedsterAI — Standard Render Pipeline
-# Generates 7 PNG renders from speedster-ai.scad using OpenSCAD CLI
+# Generates 9 PNG renders from speedster-ai.scad using OpenSCAD CLI
 #
 # Usage: ./render.sh [output_dir]
 #   output_dir defaults to ./renders/
@@ -34,7 +34,7 @@ fi
 
 mkdir -p "$OUTDIR"
 
-echo "Rendering 7 standard views..."
+echo "Rendering 9 standard views..."
 
 # Assembled views (render_mode=0, default)
 $OPENSCAD "$SCAD" --preview --camera=100,800,50,$CENTER    --imgsize=$SIZE -o "$OUTDIR/front.png"               2>/dev/null &
@@ -46,6 +46,10 @@ $OPENSCAD "$SCAD" --preview --camera=-450,-700,300,$CENTER --imgsize=$SIZE -o "$
 # Exploded views (render_mode=1)
 $OPENSCAD "$SCAD" --preview -D render_mode=1 --camera=500,600,300,$CENTER   --imgsize=$SIZE -o "$OUTDIR/exploded_front.png" 2>/dev/null &
 $OPENSCAD "$SCAD" --preview -D render_mode=1 --camera=-500,-700,300,$CENTER --imgsize=$SIZE -o "$OUTDIR/exploded_back.png"  2>/dev/null &
+
+# Component fit view (render_mode=5)
+$OPENSCAD "$SCAD" --preview -D render_mode=5 --camera=500,600,300,$CENTER   --imgsize=$SIZE -o "$OUTDIR/component_fit_front.png" 2>/dev/null &
+$OPENSCAD "$SCAD" --preview -D render_mode=5 --camera=-450,-700,300,$CENTER --imgsize=$SIZE -o "$OUTDIR/component_fit_back.png"  2>/dev/null &
 
 wait
 echo "Done. Renders saved to $OUTDIR/"
