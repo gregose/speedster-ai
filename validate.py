@@ -72,10 +72,13 @@ BOLD = "\033[1m"
 # ---------------------------------------------------------------------------
 
 def find_openscad():
-    """Find OpenSCAD binary."""
+    """Find OpenSCAD binary via OPENSCAD env var, PATH, or macOS default."""
+    env = os.environ.get("OPENSCAD")
+    if env:
+        return env
     paths = [
-        "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD",
         "openscad",
+        "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD",
     ]
     for p in paths:
         if os.path.isfile(p) and os.access(p, os.X_OK):

@@ -14,17 +14,23 @@
 
 set -e
 
-OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
 SCAD="speedster-ai.scad"
 OUTDIR="${1:-models}"
 
-if [ ! -f "$SCAD" ]; then
-    echo "Error: $SCAD not found. Run from project root." >&2
-    exit 1
+# Auto-detect OpenSCAD
+if [ -z "$OPENSCAD" ]; then
+    if command -v openscad &>/dev/null; then
+        OPENSCAD="openscad"
+    elif [ -x "/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD" ]; then
+        OPENSCAD="/Applications/OpenSCAD.app/Contents/MacOS/OpenSCAD"
+    else
+        echo "Error: OpenSCAD not found. Install it or set OPENSCAD env var." >&2
+        exit 1
+    fi
 fi
 
-if [ ! -x "$OPENSCAD" ]; then
-    echo "Error: OpenSCAD not found at $OPENSCAD" >&2
+if [ ! -f "$SCAD" ]; then
+    echo "Error: $SCAD not found. Run from project root." >&2
     exit 1
 fi
 

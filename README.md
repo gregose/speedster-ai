@@ -241,12 +241,62 @@ speedster-ai/
 ├── render.sh                 # Standard render pipeline (9 PNG views)
 ├── validate.sh               # Validation pipeline (assertions + geometric checks)
 ├── validate.py               # Python geometric collision detection (trimesh + manifold3d)
+├── copilot.sh                # Launch Copilot CLI in the devcontainer
+├── .devcontainer/            # Devcontainer config (OpenSCAD + Manifold + Python + Copilot)
 ├── models/                   # Exported STL files for printing
 ├── renders/                  # Generated PNG renders
 ├── references/               # Component reference drawings and datasheets
 ├── analysis.md               # Design verification and analysis
 └── claude.md                 # AI agent design context
 ```
+
+## Development Container
+
+The project includes a devcontainer with all tools pre-installed for a reproducible development environment. It runs an x86_64 Linux container with OpenSCAD nightly (Manifold backend — 10-100× faster CSG than CGAL), Python validation tools, and GitHub Copilot CLI.
+
+### Prerequisites
+
+- [Docker](https://www.docker.com/) or [Colima](https://github.com/abiosoft/colima) (macOS)
+- [devcontainer CLI](https://github.com/devcontainers/cli): `npm install -g @devcontainers/cli`
+- [Docker Buildx](https://github.com/docker/buildx): `brew install docker-buildx` (link with `mkdir -p ~/.docker/cli-plugins && ln -sfn $(which docker-buildx) ~/.docker/cli-plugins/docker-buildx`)
+
+**Colima users (Apple Silicon):** Start with Rosetta support for x86_64 emulation:
+```bash
+colima start --vm-type vz --vz-rosetta --mount-type virtiofs --cpu 4 --memory 8 --disk 100
+```
+
+### Quick Start
+
+1. **Store a GitHub token** (fine-grained PAT with only "Copilot Requests" permission):
+   ```bash
+   # Create token at: https://github.com/settings/personal-access-tokens/new
+   security add-generic-password -a copilot -s speedster-ai-copilot -w "github_pat_..."
+   ```
+
+2. **Launch Copilot CLI in the container:**
+   ```bash
+   ./copilot.sh
+   ```
+   This builds the container on first run, forwards your git identity, and starts an interactive Copilot session with full tool access.
+
+3. **Run tools directly:**
+   ```bash
+   devcontainer exec --workspace-folder . ./validate.sh          # Full validation
+   devcontainer exec --workspace-folder . ./export.sh            # Export STLs
+   devcontainer exec --workspace-folder . ./render.sh            # Generate renders
+   ```
+
+### What's in the Container
+
+| Tool | Purpose |
+|------|---------|
+| OpenSCAD nightly (Manifold) | Fast CSG rendering — STL exports in ~4s |
+| Python 3 + trimesh + manifold3d | Geometric collision detection |
+| xvfb | Headless OpenGL for `--preview` renders |
+| GitHub Copilot CLI | AI-assisted development |
+| GitHub CLI + Node.js | GitHub integration |
+
+Copilot session state persists across container rebuilds via a named Docker volume.
 
 ## License
 

@@ -1,0 +1,31 @@
+{
+  "name": "SpeedsterAI",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "options": ["--platform=linux/amd64"]
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/github-cli:1": {},
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "22"
+    },
+    "ghcr.io/devcontainers/features/copilot-cli:1": {}
+  },
+  "containerEnv": {
+    "OPENSCAD": "openscad"
+  },
+  "mounts": [
+    "source=speedster-ai-copilot-state,target=/home/vscode/.copilot,type=volume"
+  ],
+  "postCreateCommand": "sudo chown -R vscode:vscode /home/vscode/.copilot && gh extension install github/gh-copilot || true && ./validate.sh --skip-geometric",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "antyos.openscad",
+        "ms-python.python",
+        "github.copilot"
+      ]
+    }
+  }
+}
