@@ -1021,6 +1021,83 @@ module xover_insert_pockets_all() {
 }
 
 // ========================
+// INTERNAL BAFFLE RIBS
+// ========================
+// Integral stiffening ribs on the inner baffle surface to reduce panel
+// resonance. The flat baffle (180×264mm) is the largest unsupported panel;
+// these ribs break it into smaller zones with higher natural frequencies.
+//
+// Layout:
+//   A) Horizontal bridge between drivers (y=10, gap between bores)
+//   B) Two vertical ribs at x=±55 (clear both driver bores)
+//   C) Four diagonal stubs from woofer bore edge at ±45°
+//
+// Ribs are 3mm wide × 15mm tall from inner baffle wall (z=wall to z=wall+15).
+// Clipped to inner cavity so they don't protrude past the tapered walls.
+// Front half prints baffle-down, so ribs grow upward — no overhang issues.
+
+baffle_rib_width = 3;       // Rib thickness (mm)
+baffle_rib_height = 15;     // Rib depth from inner baffle surface (mm)
+
+module baffle_ribs() {
+    // Spoke-to-pillar rib pattern: radial ribs from the woofer ring
+    // to each bolt/pillar position. Structurally optimal — distributes
+    // woofer motor load directly to the fastener points.
+    //
+    // Layout:
+    //   - Concentric ring (R=60mm) around woofer bore
+    //   - 7 radial spokes from ring edge to pillar positions
+    //     (top center pillar skipped — spoke would cross tweeter bore)
+
+    // C) Concentric ring rib around woofer bore
+    // R=60mm sits just outside the 45° chamfer expansion zone (~55mm at inner wall)
+    // and inside the woofer screw circle (R=57.5). Intersects spokes to tie
+    // the structure into a unified web.
+    woofer_ring_r = 60;
+    translate([0, woofer_y_offset, wall])
+        difference() {
+            cylinder(r=woofer_ring_r + baffle_rib_width/2, h=baffle_rib_height, $fn=64);
+            translate([0, 0, -0.1])
+                cylinder(r=woofer_ring_r - baffle_rib_width/2, h=baffle_rib_height + 0.2, $fn=64);
+        }
+
+    // Radial spokes from ring edge to pillar positions
+    // Uses the same bolt_positions() logic to find pillar locations
+    t_sp = split_z / enclosure_depth;
+    tc_sp = pow(t_sp, taper_power);
+    w_sp = baffle_width * (1 - tc_sp) + back_width * tc_sp;
+    h_sp = baffle_height * (1 - tc_sp) + back_height * tc_sp;
+
+    pillar_pts = [
+        // Skip top center [0, h_sp/2 - bolt_inset] — spoke crosses tweeter bore
+        [0, -(h_sp/2 - bolt_inset)],                          // bottom center
+        [w_sp/2 - bolt_inset, 0],                              // right center
+        [-(w_sp/2 - bolt_inset), 0],                           // left center
+        [w_sp/2 - bolt_inset, h_sp/2 - bolt_inset - 15],      // top-right
+        [-(w_sp/2 - bolt_inset), h_sp/2 - bolt_inset - 15],   // top-left
+        [w_sp/2 - bolt_inset, -(h_sp/2 - bolt_inset - 15)],   // bottom-right
+        [-(w_sp/2 - bolt_inset), -(h_sp/2 - bolt_inset - 15)],// bottom-left
+    ];
+
+    for (pt = pillar_pts) {
+        // Direction from woofer center to pillar
+        dx = pt[0];
+        dy = pt[1] - woofer_y_offset;
+        dist = sqrt(dx*dx + dy*dy);
+        // Start point: ring outer edge
+        sx = (dx/dist) * woofer_ring_r;
+        sy = woofer_y_offset + (dy/dist) * woofer_ring_r;
+
+        hull() {
+            translate([sx, sy, wall])
+                cylinder(d=baffle_rib_width, h=baffle_rib_height, $fn=16);
+            translate([pt[0], pt[1], wall])
+                cylinder(d=baffle_rib_width, h=baffle_rib_height, $fn=16);
+        }
+    }
+}
+
+// ========================
 // FULL ENCLOSURE (ASSEMBLED)
 // ========================
 
@@ -1049,6 +1126,12 @@ module full_enclosure() {
             intersection() {
                 inner_cavity();
                 insert_pillars();
+            }
+            
+            // Internal baffle stiffening ribs (inside front half)
+            intersection() {
+                inner_cavity();
+                baffle_ribs();
             }
             
             // Back pillar bosses (inside back half)
