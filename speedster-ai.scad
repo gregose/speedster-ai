@@ -525,18 +525,33 @@ module port_bore() {
                     }
             }
             
-            // 3. Exit flare: 45° linear chamfer within back wall.
-            //    Confined entirely to the wall region (inner_back_z to back_face_z)
-            //    so no internal cavity geometry change. Bore widens from bore_r
-            //    at inner wall to bore_r + wall at back face.
-            //    Printable: exactly 45° overhang when back half prints wall-down.
-            translate([0, inner_back_z])
-                polygon([
-                    [0, 0],
-                    [bore_r, 0],
-                    [bore_r + exit_chamfer_r, wall + 1],
-                    [0, wall + 1]
-                ]);
+            // 3. Exit flare: 45° linear chamfer within back wall with fillet.
+            //    A R=10mm fillet smooths the bore-to-chamfer junction.
+            //    The fillet center sits ~4.1mm before inner_back_z, tangent to
+            //    both the vertical bore wall and the 45° chamfer line.
+            //    Arc sweeps clockwise from 180° (bore tangent) to 135° (chamfer tangent).
+            fillet_r = 10;
+            _fc_r = bore_r + fillet_r;
+            _fc_z_off = fillet_r * (1 - sqrt(2));  // ~-2.9mm
+            
+            _arc_steps = 12;
+            _arc_pts = [for (i = [0:_arc_steps])
+                let(a = 180 - i * 45 / _arc_steps)
+                [_fc_r + fillet_r * cos(a),
+                 inner_back_z + _fc_z_off + fillet_r * sin(a)]];
+            
+            // Extend straight bore to fillet tangent point
+            translate([0, inner_back_z + _fc_z_off])
+                square([bore_r, -_fc_z_off + 0.001]);
+            
+            // Fillet arc + chamfer as single closed polygon
+            polygon(concat(
+                [[0, inner_back_z + _fc_z_off]],
+                [[bore_r, inner_back_z + _fc_z_off]],
+                _arc_pts,
+                [[bore_r + exit_chamfer_r, back_face_z + 1]],
+                [[0, back_face_z + 1]]
+            ));
         }
     }
 }
