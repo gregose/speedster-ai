@@ -161,6 +161,65 @@ The component fit can also be inspected visually with `render_mode=5` (transpare
 - Front half: baffle face DOWN (split face up) — roundover profile designed for ≤45° overhang; best surface finish on visible face
 - Back half: flat back face DOWN (split face up) — large flat surface on build plate for best adhesion
 
+## Tolerance Test Print
+
+Before printing the full enclosure, print the tolerance test to calibrate printer-specific fit tolerances. The test produces small bars with feature variants at ±0.3mm in 0.1mm increments, letting you find the exact offset for your printer/material/settings combination.
+
+### Exporting the Test STL
+
+```bash
+openscad tolerance-test.scad -o models/tolerance-test.stl
+```
+
+### Printing
+
+The STL contains four groups that should be separated in your slicer and oriented per their intended print direction:
+
+| Group | Features | Print Orientation |
+|-------|----------|-------------------|
+| Face-down plate (A1, A2, A5) | M4 heatset, M3 heatset, M4 counterbore | Holes face DOWN on bed (z=0 on bed) — tests ceiling bridging |
+| Through-hole plate (A4) | Binding post keyhole | Either orientation (through-hole) |
+| Horizontal plate (B1) | M3 crossover boss insert | Bores enter from side face (Y axis) |
+| Mating pieces (C1–C3) | Tongue, groove strip, interlock boss/recess | Flat on bed |
+
+**Use the same print settings as the final enclosure** (PETG, 0.2mm layers, 5–6 perimeters) so the tolerances transfer accurately.
+
+### Testing Each Feature
+
+Each bar has 7 variants labeled with the test diameter (e.g., 5.3, 5.4, **5.6\***, 5.7...). The nominal value is marked with an asterisk (**\***). Group labels are on the front face; diameter values are on the back face.
+
+1. **A1 / A2 — Heat-set inserts:** Press an M4 or M3 heat-set insert into each hole using a soldering iron. Find the tightest hole that still accepts the insert cleanly without excess bulging. Record that diameter.
+2. **A5 — Counterbore:** Test-fit an M4 bolt head into each counterbore pocket. The bolt should drop in freely without force. The narrower through-hole above tests the bolt shank clearance.
+3. **A4 — Binding post:** Test-fit a binding post terminal. The keyway slot should prevent rotation. Find the variant where the post fits snugly.
+4. **B1 — Horizontal insert:** Press an M3 heat-set insert into each horizontal bore. This tests the Z-axis print tolerance (perpendicular to layer lines), which often differs from X/Y tolerance.
+5. **C1/C2 — Tongue and groove:** Slide the tongue piece into each groove channel. Find the groove width where the tongue slides smoothly without wobble.
+6. **C3 — Interlock:** Press the boss piece into each recess variant. Find the clearance where the boss seats fully with light press-fit resistance.
+
+### Applying Results
+
+Open `speedster-ai.scad` and find the print-tuned dimension variables near the top of the file. Each variable defaults to the design nominal — replace it with the value printed on the test variant that fits best:
+
+```openscad
+// Print-tuned dimensions — enter the label value from your best-fit test variant
+print_m4_heatset_dia  = 5.6;   // A1: M4 heat-set insert bore diameter
+print_m3_heatset_dia  = 4.5;   // A2: M3 heat-set insert bore diameter (X/Y plane)
+print_m3_heatset_z    = 4.5;   // B1: M3 heat-set insert bore diameter (horizontal/Z axis)
+print_counterbore_dia = 8.0;   // A5: bolt head counterbore diameter
+print_bolt_dia        = 4.5;   // A5: M4 bolt through-hole diameter
+print_bp_hole_dia     = 11.7;  // A4: binding post panel hole diameter
+print_bp_keyway_w     = 2.7;   // A4: binding post keyway slot width
+print_groove_w        = 3.6;   // C2: groove channel width
+print_interlock_clr   = 0.3;   // C3: interlock clearance per side
+```
+
+**Example:** You print the tolerance test, try pressing an M4 heat-set insert into each hole on bar A1, and find that the **5.8** variant gives the best fit. Change `print_m4_heatset_dia = 5.8;` — that value is now used for every M4 heat-set bore in the enclosure (woofer mounting, pillar inserts). No offset math required.
+
+After updating, re-export the enclosure STLs:
+
+```bash
+./export.sh
+```
+
 ## Assembly Instructions
 
 1. Print both halves
@@ -237,6 +296,7 @@ After assembly, cover the port opening with your palm and gently push the woofer
 speedster-ai/
 ├── speedster-ai.scad         # Complete parametric OpenSCAD enclosure model
 ├── component-envelopes.scad  # Component clearance envelopes + validation assertions
+├── tolerance-test.scad       # Printer tolerance test print (calibrate before final print)
 ├── export.sh                 # STL export pipeline (front + back halves)
 ├── render.sh                 # Standard render pipeline (9 PNG views)
 ├── validate.sh               # Validation pipeline (assertions + geometric checks)

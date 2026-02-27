@@ -339,6 +339,43 @@ Three-layer validation system ensures all components fit within the enclosure:
   - 15 pair-wise collision checks: All PASS
 - **Crossover envelopes:** Per-component models with correct shapes (5 cylinders, 5 rectangles) from KiCad placement data. Volume displacement: 0.33L.
 
-## 9. Summary
+## 9. Printer Tolerance Calibration
+
+Before printing the full enclosure, a tolerance test print (`tolerance-test.scad`) validates all fit-critical features on the target printer with the actual PETG material and print settings.
+
+### 9.1 Test Design
+
+The test generates small bars with 7 variants per feature (±0.3mm in 0.1mm increments around the current nominal). Features are grouped by print orientation to match the enclosure's actual layer directions:
+
+| Group | Features | Orientation | What It Tests |
+|-------|----------|-------------|---------------|
+| A1, A2, A5 | M4/M3 heatset, counterbore | Face-down (holes on bed) | Ceiling bridging, bore accuracy |
+| A4 | Binding post keyhole | Through-hole | Hole + keyway fit |
+| B1 | M3 horizontal bore | Upright (bore from side) | Z-axis tolerance (perpendicular to layers) |
+| C1–C3 | Tongue/groove, interlock | Flat | Mating clearances |
+
+### 9.2 Parameter Synchronization
+
+The tolerance test file uses `include <speedster-ai.scad>` to derive all nominal values directly from the enclosure's `print_*` variables. This ensures the test always generates variants centered on the current design values — no manual synchronization needed.
+
+### 9.3 Workflow
+
+1. Print the tolerance test STL with the same settings as the final enclosure
+2. Test-fit actual hardware (heat-set inserts, bolts, binding posts, tongue/groove mating pieces)
+3. Read the label on the best-fitting variant
+4. Enter that value directly into the corresponding `print_*` variable in `speedster-ai.scad`
+5. Re-export enclosure STLs with `./export.sh`
+
+### 9.4 Extending for New Features
+
+When a new fit-critical feature is introduced to the enclosure design (new insert size, different hardware, additional mating interface), a corresponding test panel should be added to `tolerance-test.scad` with:
+- A new `print_*` variable in `speedster-ai.scad` for the feature dimension
+- Test variants at ±0.3mm around the nominal
+- Correct print orientation matching the feature's orientation in the real enclosure
+- Engraved labels for identification
+
+This ensures every tolerance-sensitive dimension is validated on the actual printer before committing to a full enclosure print.
+
+## 10. Summary
 
 The SpeedsterAI enclosure faithfully reproduces Carmody's acoustic design (~5.35L effective volume accounting for internal crossover displacement, identical port tuning, same drivers and crossover) while adding structural improvements (roundover, curved back, pillars, port flares) that should improve measured performance. All mechanical interfaces (driver mounting, bolt pattern, binding posts, split joint, crossover PCB mounting) have been verified for dimensional clearance through a comprehensive validation pipeline (20 analytical assertions + 21 geometric collision/containment checks). The front edge roundover profile and port exit chamfer are designed for FDM printability with max 45° overhang. The design fits within the Bambu Lab H2D print envelope (350×320×325mm) and is printable in PETG with minimal support material.

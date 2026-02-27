@@ -32,6 +32,20 @@ include <component-envelopes.scad>
 // PARAMETRIC VARIABLES
 // ========================
 
+// --- Print-tuned dimensions ---
+// Set these to the best-fit values from your tolerance-test.scad print.
+// Defaults are the design nominals. After printing the tolerance test,
+// replace each value with the number printed on the variant that fits best.
+print_m4_heatset_dia  = 5.6;   // A1: M4 heat-set insert bore diameter
+print_m3_heatset_dia  = 4.5;   // A2: M3 heat-set insert bore diameter (X/Y plane)
+print_m3_heatset_z    = 4.5;   // B1: M3 heat-set insert bore diameter (horizontal/Z axis)
+print_counterbore_dia = 8.0;   // A5: bolt head counterbore diameter
+print_bolt_dia        = 4.5;   // A5: M4 bolt through-hole diameter (scales with counterbore)
+print_bp_hole_dia     = 11.7;  // A4: binding post panel hole diameter
+print_bp_keyway_w     = 2.7;   // A4: binding post keyway slot width
+print_groove_w        = 3.6;   // C2: groove channel width
+print_interlock_clr   = 0.3;   // C3: interlock clearance per side
+
 // --- Target ---
 target_volume_liters = 5.5;
 
@@ -102,7 +116,7 @@ woofer_total_depth = 89;         // Total depth behind baffle (mm)
 woofer_magnet_dia = 90;          // Magnet diameter for clearance (mm)
 woofer_y_offset = -45;           // Below center
 // M4 heat-set inserts for woofer mounting
-woofer_insert_dia = 5.6;         // M4 heat-set insert hole diameter
+woofer_insert_dia = print_m4_heatset_dia;  // M4 heat-set insert hole diameter
 woofer_insert_depth = 8;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // Fountek NeoCD1.0 (flush mounted, ROUND faceplate)
@@ -119,14 +133,14 @@ tweeter_rear_width = 55;          // Rear body width (mm)
 tweeter_mount_depth = 70;         // Total depth behind baffle (66 + 4mm faceplate)
 tweeter_y_offset = 55;            // Above center
 // M3 heat-set inserts for tweeter mounting
-tweeter_insert_dia = 4.5;         // M3 heat-set insert hole diameter
+tweeter_insert_dia = print_m3_heatset_dia;  // M3 heat-set insert hole diameter
 tweeter_insert_depth = 6;         // Insert pocket depth (mm) — extra depth to avoid bottoming out
 
 // --- Assembly hardware ---
-bolt_dia = 4.5;           // M4 through-hole diameter — +0.5mm tolerance for FDM
-insert_dia = 5.6;         // M4 heat-set insert hole
+bolt_dia = print_bolt_dia;  // M4 through-hole diameter
+insert_dia = print_m4_heatset_dia;  // M4 heat-set insert hole
 insert_depth = 8;          // Insert pocket depth
-bolt_landing_dia = 8;      // Counterbore/landing diameter for bolt head
+bolt_landing_dia = print_counterbore_dia;  // Counterbore/landing diameter for bolt head
 bolt_inset = 12;           // Distance from edge to bolt center
 
 // --- Tongue-and-groove seal joint ---
@@ -134,7 +148,7 @@ bolt_inset = 12;           // Distance from edge to bolt center
 // Self-aligning + sealing with foam tape or TPU in groove
 tongue_width = 3;          // Width of tongue ridge (mm)
 tongue_height = 4;         // Tongue protrusion past split face (mm)
-tongue_clearance = 0.3;    // Gap per side for print tolerance (mm)
+tongue_clearance = (print_groove_w - tongue_width) / 2;  // Derived from groove width
 seal_depth = 1;            // Extra groove depth below tongue for foam/TPU (mm)
 tongue_inset = 5;          // From outer wall to tongue center (mm)
 
@@ -142,9 +156,9 @@ tongue_inset = 5;          // From outer wall to tongue center (mm)
 // Two individual posts mounted directly through back wall.
 // Panel cutout per manufacturer drawing + 0.2mm print tolerance:
 //   2× Ø11.7mm holes, 30mm c-c, with 2.7mm × 14.2mm anti-rotation keyway
-bp_hole_dia = 11.7;              // Panel hole diameter (mm) — 11.5 + 0.2 tolerance
+bp_hole_dia = print_bp_hole_dia;     // Panel hole diameter (mm)
 bp_spacing = 30;                 // Post center-to-center spacing (mm)
-bp_keyway_width = 2.7;           // Anti-rotation slot width (mm) — 2.5 + 0.2 tolerance
+bp_keyway_width = print_bp_keyway_w;  // Anti-rotation slot width (mm)
 bp_keyway_total = 14.2;          // From hole top to keyway bottom (mm) — 14 + 0.2 tolerance
 bp_y_offset = -45;               // Vertical position on back face (same as old terminal)
 bp_intrusion = 34;               // Internal protrusion past wall (25mm shaft + 9mm lug)
@@ -169,7 +183,7 @@ xover_hole_dia = 3.3;
 
 // Mounting boss parameters
 xover_boss_dia = 10;             // Boss pad diameter (mm)
-xover_insert_dia = 4.5;          // M3 heat-set insert hole diameter
+xover_insert_dia = print_m3_heatset_z;  // M3 heat-set insert hole diameter
 xover_insert_depth = 6;          // Insert pocket depth (mm) — extra depth to avoid bottoming out
 xover_boss_min_depth = 6;        // Minimum boss depth for insert engagement
 
@@ -703,7 +717,7 @@ pillar_length = split_z - wall;  // Front pillar length
 // on the non-insert side stays at nominal dimensions.
 pillar_interlock_dia = 10;    // Boss/recess outer diameter (mm)
 pillar_interlock_h = 2;       // Boss height / recess depth (mm)
-pillar_interlock_clearance = 0.3;  // Gap per side for print tolerance
+pillar_interlock_clearance = print_interlock_clr;  // Gap per side for print tolerance
 
 // Back pillar extends from split face into back half
 back_pillar_depth = 30;       // Functional depth from split face (increased for coverage)
