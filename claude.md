@@ -186,6 +186,16 @@ Resolved tweeter-to-port collision discovered when measuring the Fountek NeoCD1.
 
 Comprehensive geometry revision driven by collision detection findings from Session 17. The component envelope validation system identified three issues: PCB corner collision with curved inner wall, marginal tweeter-port Z-clearance, and L3 inductor-port tube collision. Resolved with minimal aesthetic changes.
 
+### Session 19: Printer Tolerance Test Print
+
+Added a standalone tolerance test (`tolerance-test.scad`) to calibrate all fit-critical dimensions before the full enclosure print:
+
+- **7 feature groups** covering every tolerance-sensitive interface: M4 heatset (A1), M3 heatset (A2), counterbore (A5), binding post keyhole (A4), horizontal M3 heatset (B1), tongue/groove (C1/C2), interlock (C3).
+- **Print orientation matching:** Face-down bars (A1/A2/A5) have holes opening at z=0 (bed) to test ceiling bridging — identical to the enclosure's baffle-down print orientation. Horizontal bores (B1) test Z-axis tolerance perpendicular to layer lines. Mating pieces (C1–C3) are separate for physical fit testing.
+- **±0.3mm in 0.1mm steps:** Each feature gets 7 variants around the nominal value. Engraved labels on front/back faces identify each variant; asterisk marks the nominal.
+- **Absolute `print_*` variables:** Replaced offset-based `tol_*` variables with absolute dimension variables in `speedster-ai.scad`. The user reads the best-fit label and enters that value directly — no offset math. The tolerance test uses `include <speedster-ai.scad>` to derive its center values, keeping everything in sync.
+- **Extensibility convention:** When adding new fit-critical features, add a corresponding test panel to `tolerance-test.scad` with a new `print_*` variable, matching print orientation, and engraved labels.
+
 **Problems identified by validation:**
 1. **PCB bottom-back corner collision:** The 92×126mm crossover PCBs at z=90–182 had their bottom-back corner (z=182, y=-100) extending past the curved inner cavity wall. The large `back_corner_r=42mm` caused the inner wall to curve inward significantly at extreme corners, leaving 21.5mm of PCB embedded in wall material.
 2. **Tweeter-port Z-clearance:** Only 2.7mm gap between tweeter body (z=70) and port tube start (z=72.7). Risk of assembly interference.
@@ -254,6 +264,7 @@ Comprehensive geometry revision driven by collision detection findings from Sess
 speedster-ai/
 ├── speedster-ai.scad         # Complete parametric OpenSCAD model
 ├── component-envelopes.scad  # Component clearance envelope models + assertions
+├── tolerance-test.scad       # Printer tolerance test print (calibrate before final print)
 ├── export.sh                 # STL export pipeline (front + back halves)
 ├── render.sh                 # Standard render pipeline (9 PNG views)
 ├── validate.sh               # Validation pipeline (assertions + geometric checks)
@@ -284,9 +295,11 @@ speedster-ai/
 
 10. **Component envelope coordinate system:** Envelopes are positioned in the same coordinate system as the enclosure (z=0 at baffle, y=0 at center). Woofer envelope starts at z=wall (inner baffle face); tweeter body starts at z=wall; binding posts extend from z=enclosure_depth-wall inward; crossover PCBs are on side walls at x=±xover_pcb_face_x_abs().
 
+11. **Printer tolerance calibration:** All fit-critical dimensions are controlled by `print_*` variables at the top of `speedster-ai.scad` (e.g., `print_m4_heatset_dia`, `print_groove_w`). These default to design nominals but should be updated with values from the tolerance test print before the final enclosure export. `tolerance-test.scad` uses `include <speedster-ai.scad>` with `render_mode = -1` to import these values as test centers — they always stay in sync. When adding a new fit-critical feature, add a `print_*` variable and a corresponding test panel.
+
 ## Open Items / Future Work
 
-- STL export and slicer test for printability
-- Prototype print and fit check
+- Prototype print and fit check (tolerance test print first, then full enclosure)
 - Acoustic measurement comparison to original Speedster
 - Consider reducing `back_corner_r` aesthetic impact (17mm is fairly sharp; explore 20-25mm if PCB layout changes)
+- When adding new fit-critical features, add corresponding test panels to `tolerance-test.scad` with `print_*` variables and matching print orientation
