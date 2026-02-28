@@ -64,6 +64,7 @@ baffle_roundover = 20;    // Front edge roundover inset (mm) — diffraction con
 roundover_depth = 33;     // Depth over which roundover blends to full body (mm)
                           // Decoupled from inset for FDM printability (max overhang ≤ 45°)
 baffle_edge_chamfer = 2;  // Small 45° bevel on baffle face edge (mm) — softens front edge
+back_edge_chamfer = 2;    // Small 45° bevel on back face edge (mm) — softens rear edge
 
 // --- Back dimensions ---
 // NOTE: back_width must accommodate binding posts (30mm spacing + margin)
@@ -228,9 +229,16 @@ function roundover_inset_at(z) =
         baffle_roundover * (a*pow(f,3) + b*pow(f,2) + cc*f + 1)
     : 0;
 
+// Back edge chamfer: linear 45° bevel near back face
+// Mirror of the front baffle_edge_chamfer — softens the rear edge
+function back_inset_at(z) =
+    (back_edge_chamfer > 0 && z > enclosure_depth - back_edge_chamfer) ?
+        z - (enclosure_depth - back_edge_chamfer)
+    : 0;
+
 // 2D cross-section at depth z (0=front, enclosure_depth=back)
 // Smoothly tapers from baffle dims to back dims
-// Incorporates front edge roundover in the first roundover_depth mm
+// Incorporates front edge roundover and back edge chamfer
 module cross_section_at(z) {
     t = z / enclosure_depth;
     t_curved = pow(t, taper_power);
@@ -240,28 +248,15 @@ module cross_section_at(z) {
     h_base = baffle_height * (1 - t_curved) + back_height * t_curved;
     r_base = baffle_corner_r * (1 - t_curved) + back_corner_r * t_curved;
     
-    // Front edge roundover: in the first roundover_depth mm of depth,
-    // reduce width and height to create a smooth curved lip.
-    // Uses cubic Hermite spline for FDM printability (baffle-down):
-    //   - Starts at exactly 45° slope at z=0
-    //   - Blends to 0° slope at z=roundover_depth (tangent to body)
-    //   - Max overhang exactly 45°, monotonically decreasing
-    ri = roundover_inset_at(z);
-    if (ri > 0) {
-        w = max(0.1, w_base - 2 * ri);
-        h = max(0.1, h_base - 2 * ri);
-        r = min(r_base, w/2 - 0.1, h/2 - 0.1);
-        
-        offset(r = r)
-            square([max(0.1, w - 2*r), max(0.1, h - 2*r)], center = true);
-    } else {
-        w = w_base;
-        h = h_base;
-        r_safe = min(r_base, w/2 - 0.1, h/2 - 0.1);
-        
-        offset(r = r_safe)
-            square([max(0.1, w - 2*r_safe), max(0.1, h - 2*r_safe)], center = true);
-    }
+    // Combined edge insets: front roundover + back chamfer
+    ri = roundover_inset_at(z) + back_inset_at(z);
+    
+    w = max(0.1, w_base - 2 * ri);
+    h = max(0.1, h_base - 2 * ri);
+    r_safe = min(r_base, w/2 - 0.1, h/2 - 0.1);
+    
+    offset(r = r_safe)
+        square([max(0.1, w - 2*r_safe), max(0.1, h - 2*r_safe)], center = true);
 }
 
 // Build outer shell by hulling adjacent slices

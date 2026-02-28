@@ -297,6 +297,16 @@ speedster-ai/
 
 11. **Printer tolerance calibration:** All fit-critical dimensions are controlled by `print_*` variables at the top of `speedster-ai.scad` (e.g., `print_m4_heatset_dia`, `print_groove_w`). These default to design nominals but should be updated with values from the tolerance test print before the final enclosure export. `tolerance-test.scad` uses `include <speedster-ai.scad>` with `render_mode = -1` to import these values as test centers — they always stay in sync. When adding a new fit-critical feature, add a `print_*` variable and a corresponding test panel.
 
+### Session 20: Back Edge Chamfer
+
+Added a 2mm 45° chamfer to the back face edge, breaking up the sharp 90° corner where the back meets the side walls:
+
+- **New parameter:** `back_edge_chamfer = 2` (mm) — mirrors `baffle_edge_chamfer` on the front.
+- **New function:** `back_inset_at(z)` — linear inset from `z = enclosure_depth - back_edge_chamfer` to `z = enclosure_depth`. Combined with `roundover_inset_at(z)` in `cross_section_at(z)`.
+- **Simplified `cross_section_at(z)`:** Merged the two identical code branches (ri > 0 / ri == 0) into a single path since the inset math handles both cases.
+- **No internal impact:** The chamfer zone (z=203–205) is entirely within the back wall (z=195–205). Inner cavity unaffected.
+- **Printability:** Back half prints back-face-down, so the chamfer is at the bed — no overhang concern.
+
 ## Open Items / Future Work
 
 - Prototype print and fit check (tolerance test print first, then full enclosure)

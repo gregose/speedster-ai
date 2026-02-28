@@ -15,6 +15,12 @@ Quadratic taper (power 2.0) from 180×264mm baffle to 118×211mm back over 205mm
 
 Reduces diffraction effects above ~2737 Hz. The original MDF box had sharp baffle edges — any roundover is an improvement.
 
+## Back Edge Chamfer
+
+2mm 45° bevel on the back face edge, mirroring the front baffle edge chamfer. Defined by `back_inset_at(z)` — a linear function from `z = enclosure_depth - back_edge_chamfer` (203mm) to `z = enclosure_depth` (205mm). Breaks up the sharp 90° corner where the back face meets the side walls.
+
+Printable without supports: the back half prints back-face-down, so the chamfer is at the bed and the outer wall grows outward from it. The chamfer inset is combined with the front roundover inset in `cross_section_at(z)`, keeping the logic unified. Does not affect internal dimensions — the inner cavity stops at `z = enclosure_depth - wall` (195mm), well before the chamfer zone.
+
 ## Port System
 
 **Port dimensions:** 34.925mm diameter × 114.3mm long (Carmody spec: 1.375" × 4.5"), tuned to ~55 Hz.
