@@ -1056,12 +1056,15 @@ module xover_insert_pockets_all() {
 //   B) Two vertical ribs at x=±55 (clear both driver bores)
 //   C) Four diagonal stubs from woofer bore edge at ±45°
 //
-// Ribs are 3mm wide × 15mm tall from inner baffle wall (z=wall to z=wall+15).
+// Ribs have an isosceles trapezoid cross-section (wider at baffle base,
+// tapering to narrower tip). 9mm base × 3mm tip × 10mm tall from inner
+// baffle wall (z=wall to z=wall+10).
 // Clipped to inner cavity so they don't protrude past the tapered walls.
 // Front half prints baffle-down, so ribs grow upward — no overhang issues.
 
-baffle_rib_width = 3;       // Rib thickness (mm)
-baffle_rib_height = 15;     // Rib depth from inner baffle surface (mm)
+baffle_rib_width = 3;       // Rib thickness at top/tip (mm)
+baffle_rib_base_width = 9;  // Rib thickness at baffle base (mm) — trapezoidal profile
+baffle_rib_height = 10;     // Rib depth from inner baffle surface (mm)
 
 module baffle_ribs() {
     // Spoke-to-pillar rib pattern: radial ribs from the woofer ring
@@ -1080,9 +1083,13 @@ module baffle_ribs() {
     woofer_ring_r = 60;
     translate([0, woofer_y_offset, wall])
         difference() {
-            cylinder(r=woofer_ring_r + baffle_rib_width/2, h=baffle_rib_height, $fn=64);
+            cylinder(r1=woofer_ring_r + baffle_rib_base_width/2,
+                     r2=woofer_ring_r + baffle_rib_width/2,
+                     h=baffle_rib_height, $fn=64);
             translate([0, 0, -0.1])
-                cylinder(r=woofer_ring_r - baffle_rib_width/2, h=baffle_rib_height + 0.2, $fn=64);
+                cylinder(r1=woofer_ring_r - baffle_rib_base_width/2,
+                         r2=woofer_ring_r - baffle_rib_width/2,
+                         h=baffle_rib_height + 0.2, $fn=64);
         }
 
     // Radial spokes from ring edge to pillar positions
@@ -1114,9 +1121,9 @@ module baffle_ribs() {
 
         hull() {
             translate([sx, sy, wall])
-                cylinder(d=baffle_rib_width, h=baffle_rib_height, $fn=16);
+                cylinder(d1=baffle_rib_base_width, d2=baffle_rib_width, h=baffle_rib_height, $fn=16);
             translate([pt[0], pt[1], wall])
-                cylinder(d=baffle_rib_width, h=baffle_rib_height, $fn=16);
+                cylinder(d1=baffle_rib_base_width, d2=baffle_rib_width, h=baffle_rib_height, $fn=16);
         }
     }
 }

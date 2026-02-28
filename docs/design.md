@@ -35,6 +35,16 @@ Printable without supports: the back half prints back-face-down, so the chamfer 
 
 45° chamfer on the baffle cutout interior starting at z=3mm (leaving 3mm of straight bore for screw thread engagement). Opens the bore from 96.5mm to ~110.5mm at the inner wall surface, reducing back-wave reflections off the cutout edge.
 
+## Internal Baffle Ribs
+
+Spoke-to-pillar stiffening rib pattern on the inner baffle surface to reduce panel resonance. The flat baffle (180×264mm) is the largest unsupported panel; ribs break it into smaller zones with higher natural frequencies.
+
+**Layout:** Concentric ring (R=60mm) around the woofer bore + 7 radial spokes from ring to pillar/bolt positions (top-center pillar skipped — spoke would cross the tweeter bore).
+
+**Cross-section:** Isosceles trapezoid — 9mm base (at baffle surface) tapering to 3mm tip over 10mm height. The wider base maximizes stiffness where bending stress is highest, and the taper looks more refined than rectangular ribs. The ring rib inner edge (R=55.5mm) clears the woofer bore chamfer expansion (R=55.25mm) by 0.25mm.
+
+**Printability:** Front half prints baffle-down, so ribs grow upward from the bed — no overhang. The taper angle (~17°) is well within FDM limits.
+
 ## Split Plane & Seal
 
 Front/back split at z=80.7mm with integral tongue-and-groove seal joint. The split plane is aligned with the port tube front end so the port stays entirely in the back half.

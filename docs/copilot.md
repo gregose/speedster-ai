@@ -285,7 +285,7 @@ speedster-ai/
 4. **Bolt counterbore math:** `landing_z()` and `min_landing_z()` functions compute the uniform counterbore depth analytically from the taper formula. No iterative search needed.
 5. **The model uses z=0 at the front baffle face,** increasing toward the back. Y is vertical (positive up), X is horizontal (positive right when facing the speaker).
 
-6. **Render pipeline:** `render.sh` generates 9 standard PNG views via OpenSCAD CLI (`--preview` mode, ~1.5s each). The `render_mode` variable (0–7) selects assembled/exploded/half/cavity/component-fit/front-half-components/back-half-components views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -205=back), Z=height(+up). Model center is at (0, -102.5, 0). Camera uses eye/center 6-parameter format.
+6. **Render pipeline:** `render.sh` generates 9 standard PNG views via OpenSCAD CLI (`--render --backend=Manifold`, ~1s each in parallel). The `render_mode` variable (0–7) selects assembled/exploded/half/cavity/component-fit/front-half-components/back-half-components views. After `rotate([90,0,0])`, the display coordinate system is X=horizontal, Y=depth(0=baffle, -205=back), Z=height(+up). Model center is at (0, -102.5, 0). Camera uses eye/center 6-parameter format.
 
 7. **Hull boundary alignment:** `inner_cavity()` must use the same slice z-positions as `outer_shape()` (20 roundover + 40 body slices) with a 0.001mm epsilon offset. Misaligned boundaries create visible horizontal plane artifacts in the STL from the boolean difference. Exactly coplanar boundaries create non-manifold edges. The epsilon offset avoids both problems.
 
@@ -297,15 +297,24 @@ speedster-ai/
 
 11. **Printer tolerance calibration:** All fit-critical dimensions are controlled by `print_*` variables at the top of `speedster-ai.scad` (e.g., `print_m4_heatset_dia`, `print_groove_w`). These default to design nominals but should be updated with values from the tolerance test print before the final enclosure export. `tolerance-test.scad` uses `include <speedster-ai.scad>` with `render_mode = -1` to import these values as test centers — they always stay in sync. When adding a new fit-critical feature, add a `print_*` variable and a corresponding test panel.
 
-### Session 20: Back Edge Chamfer
+### Session 20: Back Edge Chamfer + Trapezoidal Baffle Ribs + Render Speedup
 
-Added a 2mm 45° chamfer to the back face edge, breaking up the sharp 90° corner where the back meets the side walls:
+**Back edge chamfer:** Added a 2mm 45° chamfer to the back face edge, breaking up the sharp 90° corner where the back meets the side walls:
 
 - **New parameter:** `back_edge_chamfer = 2` (mm) — mirrors `baffle_edge_chamfer` on the front.
 - **New function:** `back_inset_at(z)` — linear inset from `z = enclosure_depth - back_edge_chamfer` to `z = enclosure_depth`. Combined with `roundover_inset_at(z)` in `cross_section_at(z)`.
 - **Simplified `cross_section_at(z)`:** Merged the two identical code branches (ri > 0 / ri == 0) into a single path since the inset math handles both cases.
 - **No internal impact:** The chamfer zone (z=203–205) is entirely within the back wall (z=195–205). Inner cavity unaffected.
 - **Printability:** Back half prints back-face-down, so the chamfer is at the bed — no overhang concern.
+
+**Trapezoidal baffle ribs:** Changed the internal baffle stiffening ribs from rectangular to isosceles trapezoid cross-section:
+
+- **New parameter:** `baffle_rib_base_width = 9` (mm) — 3:1 taper ratio from 9mm base to 3mm tip.
+- **Reduced height:** 15mm → 10mm. Shorter ribs with wider base maintain comparable stiffness while reducing cavity intrusion.
+- **Woofer chamfer clearance:** Ring rib inner edge (R=55.5mm) clears the woofer bore chamfer expansion (R=55.25mm at z=wall) by 0.25mm. No acoustic impact.
+- **Implementation:** Ring uses tapered cylinders (r1/r2), spokes use tapered cylinders in hull — clean parametric change.
+
+**Render pipeline speedup:** Switched `render.sh` from `--preview` (software OpenGL via xvfb) to `--render --backend=Manifold`. Total render time dropped from ~4 minutes to ~9 seconds (25× faster). Removed xvfb dependency.
 
 ## Open Items / Future Work
 
