@@ -273,7 +273,7 @@ speedster-ai/
 ├── renders/                  # Generated PNG renders
 ├── references/               # Component reference drawings and datasheets
 ├── README.md                 # Project overview, BOM, assembly
-├── claude.md                 # This file — AI agent context
+├── copilot.md                # This file — AI agent context
 └── analysis.md               # Design verification and analysis
 ```
 
