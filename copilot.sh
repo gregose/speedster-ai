@@ -61,6 +61,10 @@ if [ -n "$GIT_EMAIL" ]; then
     devcontainer exec --workspace-folder "$WORKSPACE" git config --global user.email "$GIT_EMAIL"
 fi
 
+# Update Copilot CLI to latest version
+echo "Checking for Copilot CLI updates..."
+devcontainer exec --workspace-folder "$WORKSPACE" copilot update || true
+
 # Launch Copilot CLI inside the container with the scoped token
 devcontainer exec --workspace-folder "$WORKSPACE" \
     env GITHUB_TOKEN="$COPILOT_TOKEN" \
