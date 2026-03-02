@@ -10,9 +10,11 @@ Usage (called by render.sh):
         --center 0,-102.5,0 \
         --resolution 1920,1080 \
         [--samples 64] \
-        [--color 0.01,0.05,0.22]  (front half: deep navy blue PETG default)
-        [--color2 0.25,0.55,0.85] (back half: bright sky blue)
+        [--color 0.55,0.35,0.66]  (front half: light purple default)
+        [--color2 0.20,0.40,0.75] (back half: blue)
         [--explode 40]  (explode distance for halves along depth axis)
+        [--shell-alpha 0.1]  (enclosure translucency for component fit views)
+        [--component path.stl R,G,B ...]  (component STLs with unique colors)
 
 Camera/center coordinates use the OpenSCAD display convention
 (after rotate([90,0,0])): X=horizontal, Y=depth(0=baffle,-205=back), Z=height.
@@ -55,10 +57,23 @@ camera_str = parse_arg("--camera", "450,550,300")
 center_str = parse_arg("--center", "0,-102.5,0")
 resolution_str = parse_arg("--resolution", "1920,1080")
 samples = int(parse_arg("--samples", "64"))
-color_str = parse_arg("--color", "0.02,0.08,0.30")
-color2_str = parse_arg("--color2", "0.30,0.60,0.90")
+color_str = parse_arg("--color", "0.55,0.35,0.66")
+color2_str = parse_arg("--color2", "0.20,0.40,0.75")
 explode = float(parse_arg("--explode", "0"))
 env_strength = float(parse_arg("--env-strength", "0.5"))
+shell_alpha = float(parse_arg("--shell-alpha", "1.0"))
+
+# Parse --component args: repeatable groups of "stl_path R,G,B"
+component_specs = []
+i = 0
+while i < len(argv):
+    if argv[i] == "--component" and i + 2 < len(argv):
+        comp_stl = argv[i + 1]
+        comp_color = [float(x) for x in argv[i + 2].split(",")]
+        component_specs.append((comp_stl, comp_color))
+        i += 3
+    else:
+        i += 1
 
 # Display coords map directly to Blender coords after -90° X rotation of STLs
 camera_pos = tuple(float(x) for x in camera_str.split(","))
@@ -123,36 +138,94 @@ for i, stl_path in enumerate(stl_files):
 
 part_colors = [base_color, base_color2]
 
-def make_petg_material(name, color):
+def make_petg_material(name, color, alpha=1.0):
     mat = bpy.data.materials.new(name=name)
     mat.use_nodes = True
     nodes = mat.node_tree.nodes
     links = mat.node_tree.links
     nodes.clear()
 
-    bsdf = nodes.new("ShaderNodeBsdfPrincipled")
-    bsdf.location = (0, 0)
-    bsdf.inputs["Base Color"].default_value = (*color, 1.0)
-    bsdf.inputs["Roughness"].default_value = 0.45
-    bsdf.inputs["Metallic"].default_value = 0.0
-    for spec_name in ["Specular IOR Level", "Specular"]:
-        if spec_name in bsdf.inputs:
-            bsdf.inputs[spec_name].default_value = 0.3
-            break
-    if "Coat Weight" in bsdf.inputs:
-        bsdf.inputs["Coat Weight"].default_value = 0.15
-        bsdf.inputs["Coat Roughness"].default_value = 0.3
+    if alpha < 1.0:
+        # Translucent shell: mix Transparent + Principled BSDF
+        transparent = nodes.new("ShaderNodeBsdfTransparent")
+        transparent.location = (-200, 200)
 
-    output_node = nodes.new("ShaderNodeOutputMaterial")
-    output_node.location = (300, 0)
-    links.new(bsdf.outputs["BSDF"], output_node.inputs["Surface"])
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf.location = (-200, -100)
+        bsdf.inputs["Base Color"].default_value = (*color, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.45
+        for spec_name in ["Specular IOR Level", "Specular"]:
+            if spec_name in bsdf.inputs:
+                bsdf.inputs[spec_name].default_value = 0.3
+                break
+
+        mix = nodes.new("ShaderNodeMixShader")
+        mix.location = (100, 0)
+        mix.inputs["Fac"].default_value = alpha
+
+        links.new(transparent.outputs["BSDF"], mix.inputs[1])
+        links.new(bsdf.outputs["BSDF"], mix.inputs[2])
+
+        output_node = nodes.new("ShaderNodeOutputMaterial")
+        output_node.location = (300, 0)
+        links.new(mix.outputs["Shader"], output_node.inputs["Surface"])
+
+        mat.blend_method = 'BLEND' if hasattr(mat, 'blend_method') else None
+    else:
+        bsdf = nodes.new("ShaderNodeBsdfPrincipled")
+        bsdf.location = (0, 0)
+        bsdf.inputs["Base Color"].default_value = (*color, 1.0)
+        bsdf.inputs["Roughness"].default_value = 0.45
+        bsdf.inputs["Metallic"].default_value = 0.0
+        for spec_name in ["Specular IOR Level", "Specular"]:
+            if spec_name in bsdf.inputs:
+                bsdf.inputs[spec_name].default_value = 0.3
+                break
+        if "Coat Weight" in bsdf.inputs:
+            bsdf.inputs["Coat Weight"].default_value = 0.15
+            bsdf.inputs["Coat Roughness"].default_value = 0.3
+
+        output_node = nodes.new("ShaderNodeOutputMaterial")
+        output_node.location = (300, 0)
+        links.new(bsdf.outputs["BSDF"], output_node.inputs["Surface"])
     return mat
 
 for i, obj in enumerate(imported_objects):
     color = part_colors[i % len(part_colors)]
-    mat = make_petg_material(f"PETG_{i}", color)
+    mat = make_petg_material(f"PETG_{i}", color, alpha=shell_alpha)
     obj.data.materials.clear()
     obj.data.materials.append(mat)
+
+# ── Import component STLs (if any) ─────────────────────────────────────
+
+component_objects = []
+for comp_stl, comp_color in component_specs:
+    bpy.ops.import_mesh.stl(filepath=comp_stl)
+    obj = bpy.context.active_object
+    obj.name = f"comp_{os.path.basename(comp_stl)}"
+
+    # Components exported via validation_export have no rotation — same coords as model
+    # Apply the same +90° X rotation to match display coords
+    obj.rotation_euler.x = math.pi / 2
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.transform_apply(rotation=True)
+
+    # Smooth shading
+    obj.select_set(True)
+    bpy.ops.object.shade_smooth()
+    mesh = obj.data
+    if hasattr(mesh, 'use_auto_smooth'):
+        mesh.use_auto_smooth = True
+        mesh.auto_smooth_angle = math.radians(30)
+    obj.select_set(False)
+
+    # Opaque component material
+    mat = make_petg_material(f"Comp_{os.path.basename(comp_stl)}", comp_color, alpha=1.0)
+    obj.data.materials.clear()
+    obj.data.materials.append(mat)
+
+    component_objects.append(obj)
+    imported_objects.append(obj)  # include in bbox/framing calculations
 
 # ── Lighting: 3-point studio ────────────────────────────────────────────
 
@@ -214,7 +287,7 @@ bpy.context.scene.camera = camera
 
 # Point camera at center
 direction = Vector(center_pos) - Vector(camera_pos)
-rot_quat = direction.to_track_quat('-Z', 'Z')
+rot_quat = direction.to_track_quat('-Z', 'Y')
 camera.rotation_euler = rot_quat.to_euler()
 
 # Auto-fit: project bounding box corners onto camera view plane
@@ -268,8 +341,13 @@ scene = bpy.context.scene
 scene.render.engine = 'CYCLES'
 scene.cycles.device = 'CPU'
 scene.cycles.samples = samples
-scene.cycles.use_denoising = False  # OIDN not available in container
+scene.cycles.use_denoising = False  # OIDN not available in container build
 scene.cycles.preview_samples = 16
+
+# Adaptive sampling: stop early on converged pixels (big speedup on simple regions)
+scene.cycles.use_adaptive_sampling = True
+scene.cycles.adaptive_threshold = 0.05
+scene.cycles.adaptive_min_samples = max(8, samples // 4)
 
 scene.render.resolution_x = resolution[0]
 scene.render.resolution_y = resolution[1]
@@ -280,9 +358,10 @@ scene.render.image_settings.color_mode = 'RGBA'
 scene.render.film_transparent = True
 
 scene.render.use_persistent_data = True
-scene.cycles.max_bounces = 6
-scene.cycles.diffuse_bounces = 3
-scene.cycles.glossy_bounces = 3
+scene.cycles.max_bounces = 4
+scene.cycles.diffuse_bounces = 2
+scene.cycles.glossy_bounces = 2
+scene.cycles.transmission_bounces = 0  # opaque PETG, no transmission needed
 
 # ── Render ──────────────────────────────────────────────────────────────
 
