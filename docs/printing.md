@@ -70,6 +70,7 @@ print_bolt_dia        = 4.5;   // A5: M4 bolt through-hole diameter
 print_bp_hole_dia     = 11.7;  // A4: binding post panel hole diameter
 print_bp_keyway_w     = 2.7;   // A4: binding post keyway slot width
 print_groove_w        = 3.6;   // C2: groove channel width
+print_seal_depth      = 2.8;   // C4: seal depth below tongue tip for seal cord
 print_interlock_clr   = 0.3;   // C3: interlock clearance per side
 ```
 

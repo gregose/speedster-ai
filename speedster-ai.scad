@@ -43,7 +43,8 @@ print_counterbore_dia = 8.0;   // A5: bolt head counterbore diameter
 print_bolt_dia        = 4.5;   // A5: M4 bolt through-hole diameter (scales with counterbore)
 print_bp_hole_dia     = 11.6;  // A4: binding post panel hole diameter
 print_bp_keyway_w     = 2.6;   // A4: binding post keyway slot width
-print_groove_w        = 3.4;   // C2: groove channel width (fits 3mm seal cord + tongue)
+print_groove_w        = 3.3;   // C2: groove channel width (fits 3mm seal cord + tongue)
+print_seal_depth      = 2.2;   // C4: seal depth below tongue tip for seal cord
 print_interlock_clr   = 0.2;   // C3: interlock clearance per side
 
 // --- Target ---
@@ -153,7 +154,7 @@ tongue_width = 3;          // Width of tongue ridge (mm)
 tongue_height = 4;         // Tongue protrusion past split face (mm)
 tongue_clearance = (print_groove_w - tongue_width) / 2;  // Derived from groove width
 seal_dia = 3;              // Rubber seal cord diameter (mm)
-seal_depth = 2.8;          // Groove depth below tongue tip for seal (mm)
+seal_depth = print_seal_depth;  // Groove depth below tongue tip for seal (mm)
 tongue_inset = 5;          // From outer wall to tongue center (mm)
 
 // --- Direct-mount binding posts (Dayton Audio BPP-SNB) ---
@@ -728,6 +729,7 @@ pillar_length = split_z - wall;  // Front pillar length
 pillar_interlock_dia = 10;    // Boss/recess outer diameter (mm)
 pillar_interlock_h = 2;       // Boss height / recess depth (mm)
 pillar_interlock_clearance = print_interlock_clr;  // Gap per side for print tolerance
+pillar_interlock_axial_clr = 0.4;  // Axial clearance: boss shorter than recess
 
 // Back pillar extends from split face into back half
 back_pillar_depth = 30;       // Functional depth from split face (increased for coverage)
@@ -766,9 +768,9 @@ module pillar_interlock_recesses() {
 // Protrudes past split_z into front half territory
 module pillar_interlock_bosses() {
     bolt_positions()
-        translate([0, 0, split_z - pillar_interlock_h - 0.01])
+        translate([0, 0, split_z - pillar_interlock_h + pillar_interlock_axial_clr - 0.01])
             difference() {
-                cylinder(d = pillar_interlock_dia, h = pillar_interlock_h + 0.01);
+                cylinder(d = pillar_interlock_dia, h = pillar_interlock_h - pillar_interlock_axial_clr + 0.01);
                 // Clear the bolt through-hole
                 translate([0, 0, -0.1])
                     cylinder(d = bolt_dia + 1, h = pillar_interlock_h + 0.3);
